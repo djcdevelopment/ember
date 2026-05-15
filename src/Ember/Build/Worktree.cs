@@ -49,12 +49,28 @@ public static class Worktree
         return new WorktreeInfo(path, branch, baseRef);
     }
 
-    /// <summary>Removes a worktree and prunes its registration. Best-effort — used by Phase 3 cleanup.</summary>
+    /// <summary>
+    /// Removes a worktree, prunes its registration, and deletes the directory if git left it
+    /// behind (e.g. an unregistered or partially-removed worktree). Best-effort — never throws.
+    /// The build branch is left intact.
+    /// </summary>
     public static async Task RemoveAsync(string repoPath, string worktreePath, CancellationToken ct)
     {
         await ProcessRunner.RunAsync(
             "git", new[] { "-C", repoPath, "worktree", "remove", "--force", worktreePath }, null, ct);
         await ProcessRunner.RunAsync("git", new[] { "-C", repoPath, "worktree", "prune" }, null, ct);
+
+        if (Directory.Exists(worktreePath))
+        {
+            try
+            {
+                Directory.Delete(worktreePath, recursive: true);
+            }
+            catch
+            {
+                // Best-effort — a locked file leaves the directory for the next cleanup pass.
+            }
+        }
     }
 
     /// <summary>A one-line summary of the worktree's changes against the ref it was cut from.</summary>

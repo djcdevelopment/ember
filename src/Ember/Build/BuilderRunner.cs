@@ -13,8 +13,8 @@ namespace Ember.Build;
 /// <summary>
 /// Runs a build: cuts a worktree, drops <c>.ember/PLAN.md</c>, spawns headless Claude Code
 /// (<c>claude -p --output-format stream-json</c>), digests the JSONL event stream into one
-/// throttled Discord status message, and leaves the branch + diff stats in the worktree.
-/// Phase 2 stops before the PR — a successful build rests the session in <c>Building</c>.
+/// throttled Discord status message. On success it hands off to <see cref="PullRequest"/>
+/// (push + draft PR) and removes the worktree, leaving the session in <c>PrOpen</c>.
 /// </summary>
 public sealed class BuilderRunner
 {
@@ -44,17 +44,20 @@ public sealed class BuilderRunner
 
     private readonly SessionStore _sessions;
     private readonly ThreadGateway _threads;
+    private readonly PullRequest _pullRequest;
     private readonly EmberOptions _options;
     private readonly ILogger<BuilderRunner> _logger;
 
     public BuilderRunner(
         SessionStore sessions,
         ThreadGateway threads,
+        PullRequest pullRequest,
         IOptions<EmberOptions> options,
         ILogger<BuilderRunner> logger)
     {
         _sessions = sessions;
         _threads = threads;
+        _pullRequest = pullRequest;
         _options = options.Value;
         _logger = logger;
     }
@@ -148,11 +151,12 @@ public sealed class BuilderRunner
         }
 
         // ── Run the builder ───────────────────────────────────────────────────────────
-        return await RunBuilderAsync(session, worktree, status, activity, ct);
+        return await RunBuilderAsync(session, repoPath, worktree, status, activity, ct);
     }
 
     private async Task<Outcome> RunBuilderAsync(
-        Session session, WorktreeInfo worktree, StatusMessage status, Activity? activity, CancellationToken ct)
+        Session session, string repoPath, WorktreeInfo worktree,
+        StatusMessage status, Activity? activity, CancellationToken ct)
     {
         var resolved = ResolveExecutable(_options.Builder.Command);
         if (resolved is null)
@@ -253,11 +257,11 @@ public sealed class BuilderRunner
             return await FailAsync(session, status, activity, reason, worktree.Path);
         }
 
-        return await SucceedAsync(session, status, worktree, digest, activity, ct);
+        return await SucceedAsync(session, repoPath, status, worktree, digest, activity, ct);
     }
 
     private async Task<Outcome> SucceedAsync(
-        Session session, StatusMessage status, WorktreeInfo worktree,
+        Session session, string repoPath, StatusMessage status, WorktreeInfo worktree,
         BuildDigest digest, Activity? activity, CancellationToken ct)
     {
         string diff;
@@ -270,20 +274,52 @@ public sealed class BuilderRunner
             diff = $"(diff stat unavailable: {ex.Message})";
         }
 
-        // Phase 2 stops before the PR. The session rests in BUILDING with its branch ready
-        // in the worktree; the BUILDING -> PR_OPEN handoff lands in Phase 3.
+        await status.UpdateAsync(
+            $"🔨 Build finished — pushing the branch and opening a draft PR…\n{digest.RenderSummary()}",
+            force: true);
+
+        var pr = await _pullRequest.OpenAsync(session, worktree, ct);
+        if (!pr.Ok)
+        {
+            // The build itself succeeded — keep the worktree so the operator can finish the
+            // handoff (push / PR) by hand.
+            session.State = SessionState.Failed;
+            session.LastError = $"build succeeded but the PR handoff failed: {pr.Error}";
+            _sessions.Update(session);
+            await status.FinalizeAsync(
+                $"⚠️ **Build succeeded, but the PR handoff failed** — {pr.Error}\n"
+                + $"{digest.RenderSummary()} · changes vs `{worktree.BaseRef}`: {diff}\n"
+                + $"Worktree kept: `{worktree.Path}` (branch `{worktree.Branch}`).");
+            activity?.SetStatus(ActivityStatusCode.Error, pr.Error);
+            _logger.LogError("PR handoff failed for session {ThreadId}: {Error}", session.ThreadId, pr.Error);
+            return Outcome.Failed;
+        }
+
+        session.PrUrl = pr.Url;
+        session.State = SessionState.PrOpen;
         session.LastError = null;
         _sessions.Update(session);
 
+        // The PR is open and the branch is on the remote — the worktree is no longer needed.
+        // The branch and PR are kept; only the working directory is removed.
+        try
+        {
+            await Worktree.RemoveAsync(repoPath, worktree.Path, CancellationToken.None);
+            session.WorktreePath = null;
+            _sessions.Update(session);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not remove worktree for session {ThreadId}.", session.ThreadId);
+        }
+
         await status.FinalizeAsync(
-            $"✅ **Build complete** — `{worktree.Branch}`\n"
-            + $"{digest.RenderSummary()}\n"
-            + $"Changes vs `{worktree.BaseRef}`: {diff}\n"
-            + $"Worktree: `{worktree.Path}`\n"
-            + "_The branch is ready. PR handoff lands in Phase 3._");
+            "✅ **Build complete — draft PR opened**\n"
+            + $"{digest.RenderSummary()} · changes vs `{worktree.BaseRef}`: {diff}\n"
+            + $"Branch `{worktree.Branch}`\n{pr.Url}");
 
         activity?.SetStatus(ActivityStatusCode.Ok);
-        _logger.LogInformation("Build complete for session {ThreadId} ({Branch}).", session.ThreadId, worktree.Branch);
+        _logger.LogInformation("Session {ThreadId} reached PR_OPEN: {Url}", session.ThreadId, pr.Url);
         return Outcome.Success;
     }
 

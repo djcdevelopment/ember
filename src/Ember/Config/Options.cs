@@ -38,6 +38,12 @@ public sealed class EmberOptions
     /// </summary>
     public string WorktreeRoot { get; set; } = "worktrees";
 
+    /// <summary>
+    /// Days to keep the worktree of a finished-but-not-PR'd build (FAILED / ABORTED) before
+    /// boot-time cleanup removes it. The branch is always kept. 0 disables cleanup.
+    /// </summary>
+    public int WorktreeRetentionDays { get; set; } = 7;
+
     /// <summary>Headless-builder settings.</summary>
     public BuilderOptions Builder { get; set; } = new();
 

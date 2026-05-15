@@ -50,9 +50,13 @@ builder.Services.AddSingleton<Critic>();
 builder.Services.AddSingleton<PlanningLoopRunner>();
 
 // ── Builder ───────────────────────────────────────────────────────────────────
+builder.Services.AddSingleton<PullRequest>();
 builder.Services.AddSingleton<BuilderRunner>();
 builder.Services.AddSingleton<BuildQueue>();
 
+// RecoveryService is registered first: its StartAsync flips stale active sessions to FAILED
+// before GateService / BuildQueue start.
+builder.Services.AddHostedService<RecoveryService>();
 builder.Services.AddHostedService<DiscordBotService>();
 builder.Services.AddHostedService<GateService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BuildQueue>());

@@ -1,6 +1,6 @@
 # ember — Implementation Plan
 
-Status: Phases 0-2 built (Phase 2 on 2026-05-15). Phase 3 planned.
+Status: Phases 0-3 built (2026-05-15) — the full `/plan` -> draft PR pipeline.
 
 ## What ember is
 
