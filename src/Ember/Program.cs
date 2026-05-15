@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using Ember.Build;
 using Ember.Config;
+using Ember.Demo;
 using Ember.Discord;
 using Ember.Discord.Interactions;
 using Ember.Gate;
@@ -15,6 +16,14 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
+// `dotnet run -- demo` emits a synthetic OTel trace set to the console and exits —
+// it never starts the bot. See Demo/TraceDemo.cs.
+if (TraceDemo.IsRequested(args))
+{
+    await TraceDemo.RunAsync();
+    return;
+}
 
 var builder = Host.CreateApplicationBuilder(args);
 

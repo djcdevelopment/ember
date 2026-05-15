@@ -29,8 +29,8 @@ Personal dev tool, single operator — not a product.
 |---|---|---|
 | 0 | Host, SQLite session store, owner-locked `/plan` `/status` `/abort`, OpenTelemetry | Built |
 | 1 | The Claude/GPT planning loop and the resumable soft gate | Built |
-| 2 | The builder — headless Claude Code in a git worktree | Planned |
-| 3 | PR handoff and hardening | Planned |
+| 2 | The builder — headless Claude Code in a git worktree | Built |
+| 3 | PR handoff and hardening | Built |
 
 Full design: [PLAN.md](PLAN.md). Architecture decisions: [docs/adr](docs/adr).
 
@@ -44,7 +44,7 @@ Full design: [PLAN.md](PLAN.md). Architecture decisions: [docs/adr](docs/adr).
 
 ## Setup
 
-Prerequisites: the .NET 9 SDK; `git` and `gh` on the host; (Phase 2) Claude Code installed.
+Prerequisites: the .NET 9 SDK; `git` and authenticated `gh` on the host; Claude Code installed and authenticated (the builder).
 
 Non-secret settings live in `src/Ember/appsettings.json`. Secrets go in user-secrets:
 
@@ -70,6 +70,27 @@ scopes; ember registers its slash commands on startup.
 dotnet run --project src/Ember
 ```
 
+To see the OpenTelemetry signals without a live run, emit a synthetic trace set
+(real span names and tags, console exporter) — no Discord, no model calls:
+
+```
+dotnet run --project src/Ember -- demo
+```
+
+## Ports
+
+ember has no inbound listener — it is a Discord gateway client. Its allocation
+in **portmap** (`D:/work/start/portmap`, project id `ember`, range 18110-18119)
+reserves ports for the local OpenTelemetry collector it exports to:
+
+| Port | Service | Use |
+|---|---|---|
+| 18110 | aspire-dashboard | OTLP collector / dashboard UI |
+| 18111 | aspire-otlp | OTLP gRPC ingest — point `Otel:Endpoint` here |
+
+Before changing ports, check portmap:
+`python D:/work/start/portmap/portmap.py check <port>`.
+
 ## Commands
 
 | Command | Effect |
@@ -91,6 +112,9 @@ src/Ember/
   Discord/                      bot service, slash commands, thread helpers
   Loop/                         Planner, Critic, CriticVerdict, PlanningLoopRunner
   Gate/GateService.cs           the resumable soft-gate poller
+  Build/                        Worktree, PlanArtifact, BuilderRunner, BuildQueue, PullRequest
+  Sessions/RecoveryService.cs   boot recovery for interrupted sessions
+  Demo/TraceDemo.cs             synthetic OTel trace demo (dotnet run -- demo)
   Models/ChatClientFactory.cs   IChatClient builder
   Observability/Telemetry.cs    ActivitySource + Meter
 ```
