@@ -30,6 +30,11 @@ public sealed class Critic
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
 
+    // Request JSON-object mode. OpenAI and Ollama both honour it, and it markedly improves
+    // parse reliability on smaller local models; a provider that ignores it is still covered
+    // by the parse-and-retry below.
+    private static readonly ChatOptions JsonMode = new() { ResponseFormat = ChatResponseFormat.Json };
+
     private readonly IChatClient _chat;
     private readonly ILogger<Critic> _logger;
 
@@ -50,7 +55,7 @@ public sealed class Critic
 
         for (var attempt = 1; attempt <= 2; attempt++)
         {
-            var response = await _chat.GetResponseAsync(messages, cancellationToken: ct);
+            var response = await _chat.GetResponseAsync(messages, JsonMode, ct);
             var text = response.Text ?? "";
 
             var verdict = TryParse(text);

@@ -84,8 +84,9 @@ starts**; it has **not been run end to end**.
   against a real repo.
 - **The Discord status throttle** under a genuinely long build is designed but
   not observed against live rate limits.
-- **The critic on a local (Ollama) model** — the structured-output retry
-  exists for exactly this case but has only ever run against GPT.
+- ~~**The critic on a local (Ollama) model.**~~ Verified 2026-05-15: the
+  console loop (`dotnet run -- plan`) runs the critic on Ollama with
+  JSON-object mode; `qwen3.5:9b` verdicts parsed cleanly on the first attempt.
 
 ## Risks carried forward
 

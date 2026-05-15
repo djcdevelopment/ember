@@ -73,9 +73,33 @@ scopes; ember registers its slash commands on startup.
 
 ## Run
 
+The bot:
+
 ```
 dotnet run --project src/Ember
 ```
+
+Or run just the planning loop on the console — no Discord, no gate, no build.
+This is the quickest way to exercise the loop or try a local critic:
+
+```
+dotnet run --project src/Ember -- plan "add a /ping command" ember
+```
+
+### Local models
+
+The planner and critic reach models through one OpenAI-compatible `IChatClient`
+([ADR 3](docs/adr/0003-openai-compatible-ichatclient.md)), so pointing either at
+a local model is a config change. The Development config runs the critic on a
+local Ollama model:
+
+```json
+"Models": { "Critic": { "Provider": "ollama", "Model": "qwen3.5:9b-q4_K_M" } }
+```
+
+Set `Provider` back to `openai` (with a `Model` and `ApiKey`) for a hosted
+critic. The critic requests JSON-object mode, which keeps smaller local models'
+structured verdicts parseable.
 
 ## Observability
 
@@ -125,6 +149,7 @@ src/Ember/
   Gate/GateService.cs           the resumable soft-gate poller
   Build/                        Worktree, PlanArtifact, BuilderRunner, BuildQueue, PullRequest
   Sessions/RecoveryService.cs   boot recovery for interrupted sessions
+  Cli/PlanCli.cs                console planning-loop runner (dotnet run -- plan)
   Demo/TraceDemo.cs             synthetic OTel trace demo (dotnet run -- demo)
   Models/ChatClientFactory.cs   IChatClient builder
   Observability/Telemetry.cs    ActivitySource + Meter

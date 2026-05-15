@@ -1,6 +1,7 @@
 using Discord;
 using Discord.WebSocket;
 using Ember.Build;
+using Ember.Cli;
 using Ember.Config;
 using Ember.Demo;
 using Ember.Discord;
@@ -22,7 +23,14 @@ using OpenTelemetry.Trace;
 if (TraceDemo.IsRequested(args))
 {
     await TraceDemo.RunAsync(TraceDemo.OtlpEndpoint(args));
-    return;
+    return 0;
+}
+
+// `dotnet run -- plan "<brief>" <repo>` runs the planning loop on the console and exits.
+// See Cli/PlanCli.cs.
+if (PlanCli.IsRequested(args))
+{
+    return await PlanCli.RunAsync(args);
 }
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -95,3 +103,4 @@ var host = builder.Build();
 host.Services.GetRequiredService<SessionStore>().Initialize();
 
 host.Run();
+return 0;
