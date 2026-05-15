@@ -1,3 +1,4 @@
+using Ember.Build;
 using Ember.Config;
 using Ember.Discord;
 using Ember.Observability;
@@ -17,17 +18,20 @@ public sealed class GateService : BackgroundService
 
     private readonly SessionStore _sessions;
     private readonly ThreadGateway _threads;
+    private readonly BuildQueue _builds;
     private readonly EmberOptions _options;
     private readonly ILogger<GateService> _logger;
 
     public GateService(
         SessionStore sessions,
         ThreadGateway threads,
+        BuildQueue builds,
         IOptions<EmberOptions> options,
         ILogger<GateService> logger)
     {
         _sessions = sessions;
         _threads = threads;
+        _builds = builds;
         _options = options.Value;
         _logger = logger;
     }
@@ -73,14 +77,16 @@ public sealed class GateService : BackgroundService
         using var activity = Telemetry.Activity.StartActivity("gate.fire");
         activity?.SetTag("ember.gate_reason", session.GateReason?.ToString());
 
-        // Phase 1 stub — the real builder lands in Phase 2.
+        // Transition to Building, then hand off to the FIFO build queue. The queue worker
+        // re-reads the row before running, so this ordering is safe across a restart.
         session.State = SessionState.Building;
         _sessions.Update(session);
+        _builds.Enqueue(session.ThreadId);
 
         await _threads.PostAsync(session.ThreadId,
-            "**Gate elapsed — plan accepted.** Handing off to the builder.\n"
-            + "_The builder is Phase 2; nothing runs yet. The session now rests in `Building`._");
-        _logger.LogInformation("Gate fired for session {ThreadId}.", session.ThreadId);
+            "**Gate elapsed — plan accepted.** Queued for the builder; "
+            + "the build starts when the queue is free. Run `/abort` to stop it.");
+        _logger.LogInformation("Gate fired for session {ThreadId}; queued for build.", session.ThreadId);
     }
 
     private async Task ReconcileOnBootAsync()

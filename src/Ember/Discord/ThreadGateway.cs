@@ -30,6 +30,30 @@ public sealed class ThreadGateway
             await channel.SendMessageAsync(chunk);
     }
 
+    /// <summary>
+    /// Sends a single message to a thread and returns its handle for later editing — used
+    /// for the live build status message. Returns null if the thread is gone or the send
+    /// fails; callers treat the message as best-effort.
+    /// </summary>
+    public async Task<IUserMessage?> CreateMessageAsync(string threadId, string text)
+    {
+        if (_client.GetChannel(ulong.Parse(threadId)) is not IMessageChannel channel)
+        {
+            _logger.LogWarning("Thread {ThreadId} not found — cannot create status message.", threadId);
+            return null;
+        }
+
+        try
+        {
+            return await channel.SendMessageAsync(Chunk(text).First());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not create status message in thread {ThreadId}.", threadId);
+            return null;
+        }
+    }
+
     /// <summary>Returns operator (non-bot) messages posted in a thread since the given time.</summary>
     public async Task<string> CollectOperatorMessagesAsync(string threadId, DateTimeOffset since)
     {

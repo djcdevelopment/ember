@@ -1,6 +1,6 @@
 # ember — Implementation Plan
 
-Status: Phases 0-1 built and committed (2026-05-15). Phases 2-3 planned.
+Status: Phases 0-2 built (Phase 2 on 2026-05-15). Phase 3 planned.
 
 ## What ember is
 

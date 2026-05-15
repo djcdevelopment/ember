@@ -16,4 +16,12 @@ public static class Telemetry
     /// <summary>Counts slash commands handled, tagged by command name.</summary>
     public static readonly Counter<long> CommandsHandled =
         Meter.CreateCounter<long>("ember.commands.handled");
+
+    /// <summary>Counts builds that reached a terminal state, tagged by outcome.</summary>
+    public static readonly Counter<long> BuildsCompleted =
+        Meter.CreateCounter<long>("ember.builds.completed");
+
+    /// <summary>Wall-clock duration of builder runs, in seconds, tagged by outcome.</summary>
+    public static readonly Histogram<double> BuildDuration =
+        Meter.CreateHistogram<double>("ember.build.duration", unit: "s");
 }

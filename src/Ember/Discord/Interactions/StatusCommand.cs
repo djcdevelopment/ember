@@ -35,6 +35,15 @@ public sealed class StatusCommand : ISlashCommand
             .AddField("Repo", session.Repo, inline: true)
             .AddField("Brief", Truncate(session.Brief, 1000));
 
+        if (session.BranchName is { } branch)
+            embed.AddField("Branch", branch, inline: true);
+        if (session.WorktreePath is { } worktree)
+            embed.AddField("Worktree", Truncate(worktree, 1000));
+        if (session.PrUrl is { } prUrl)
+            embed.AddField("PR", prUrl);
+        if (session.LastError is { } error)
+            embed.AddField("Last error", Truncate(error, 1000));
+
         if (session.GateReason is { } gateReason)
             embed.WithFooter($"Gate: {gateReason}");
 

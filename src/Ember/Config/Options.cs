@@ -32,8 +32,41 @@ public sealed class EmberOptions
     /// <summary>Hard backstop on planning-loop rounds.</summary>
     public int MaxPlanRounds { get; set; } = 6;
 
+    /// <summary>
+    /// Directory under which per-build git worktrees are created. Relative paths resolve
+    /// against the working directory (like <see cref="DatabasePath"/>).
+    /// </summary>
+    public string WorktreeRoot { get; set; } = "worktrees";
+
+    /// <summary>Headless-builder settings.</summary>
+    public BuilderOptions Builder { get; set; } = new();
+
     /// <summary>Allowlisted repos: key -> absolute path on the host.</summary>
     public Dictionary<string, string> Repos { get; set; } = new();
+}
+
+/// <summary>Settings for the headless Claude Code builder.</summary>
+public sealed class BuilderOptions
+{
+    /// <summary>
+    /// The Claude Code executable. A bare name is resolved against <c>PATH</c> (and
+    /// <c>PATHEXT</c> on Windows, so the npm <c>claude.cmd</c> shim is found); an absolute
+    /// path is used as-is.
+    /// </summary>
+    public string Command { get; set; } = "claude";
+
+    /// <summary>
+    /// Pass <c>--dangerously-skip-permissions</c> so the builder can edit files and run
+    /// build/test commands without interactive prompts. The builder runs in an isolated
+    /// per-build worktree and produces only a draft PR — see PLAN.md "Security".
+    /// </summary>
+    public bool SkipPermissions { get; set; } = true;
+
+    /// <summary>Extra CLI arguments appended verbatim to every builder invocation.</summary>
+    public List<string> ExtraArgs { get; set; } = new();
+
+    /// <summary>Kill the builder and fail the build if it runs longer than this.</summary>
+    public int TimeoutMinutes { get; set; } = 30;
 }
 
 /// <summary>One model endpoint (planner or critic).</summary>

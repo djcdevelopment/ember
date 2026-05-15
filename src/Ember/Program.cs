@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using Ember.Build;
 using Ember.Config;
 using Ember.Discord;
 using Ember.Discord.Interactions;
@@ -48,8 +49,13 @@ builder.Services.AddSingleton<Planner>();
 builder.Services.AddSingleton<Critic>();
 builder.Services.AddSingleton<PlanningLoopRunner>();
 
+// ── Builder ───────────────────────────────────────────────────────────────────
+builder.Services.AddSingleton<BuilderRunner>();
+builder.Services.AddSingleton<BuildQueue>();
+
 builder.Services.AddHostedService<DiscordBotService>();
 builder.Services.AddHostedService<GateService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<BuildQueue>());
 
 // ── OpenTelemetry ─────────────────────────────────────────────────────────────
 var otelOptions = builder.Configuration.GetSection(OtelOptions.Section).Get<OtelOptions>() ?? new OtelOptions();
