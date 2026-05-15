@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+
+# ember runtime state
+ember.db
+ember.db-wal
+ember.db-shm
