@@ -1,0 +1,19 @@
+flowchart TB
+    subgraph BOOT["Hosted services — started in registration order"]
+        direction TB
+        H1["1 · RecoveryService<br/>stale PLANNING/BUILDING → FAILED, clean worktrees"]
+        H2["2 · DiscordBotService<br/>connect gateway, register slash commands"]
+        H3["3 · GateService<br/>boot reconcile + 20s countdown poll"]
+        H4["4 · BuildQueue<br/>drain the FIFO build channel"]
+        H1 --> H2 --> H3 --> H4
+    end
+
+    subgraph DI["Singletons resolved by DI"]
+        direction TB
+        S1["SessionStore · ThreadGateway"]
+        S2["Planner · Critic · PlanningLoopRunner"]
+        S3["BuilderRunner · PullRequest"]
+        S4["IChatClient ×2 — keyed 'planner' / 'critic'"]
+    end
+
+    BOOT -.uses.-> DI

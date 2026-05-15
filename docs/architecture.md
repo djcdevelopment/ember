@@ -10,56 +10,15 @@ long-lived **session** — one Discord thread, one SQLite row — that moves
 through a fixed state machine: a Claude/GPT planning loop, a soft approval
 gate, a headless build, and a draft-PR handoff.
 
+> The diagrams below are SVGs rendered from the Mermaid sources in
+> [`diagrams/`](diagrams/). To change one, edit its `.mmd` file and re-render
+> with [`mermaid-cli`](https://github.com/mermaid-js/mermaid-cli).
+
 ---
 
 ## 1. System dataflow
 
-```mermaid
-flowchart LR
-    OP([Operator])
-
-    subgraph DISCORD["Discord"]
-        CMD["/plan · /status · /abort"]
-        THREAD["Session thread"]
-    end
-
-    subgraph HOST["ember — .NET Generic Host, always-on"]
-        BOT["DiscordBotService"]
-        LOOP["PlanningLoopRunner"]
-        GATE["GateService"]
-        QUEUE["BuildQueue · FIFO"]
-        RUNNER["BuilderRunner"]
-        PR["PullRequest"]
-        REC["RecoveryService"]
-        DB[("SessionStore<br/>SQLite")]
-    end
-
-    MODELS["Planner = Claude<br/>Critic = GPT<br/>via IChatClient"]
-    CC["headless Claude Code<br/>claude -p --output-format stream-json"]
-    WT["git worktree<br/>branch ember/&lt;slug&gt;"]
-    GH["GitHub<br/>pushed branch + draft PR"]
-    JAEGER[("Jaeger<br/>OTLP :4317")]
-
-    OP --> CMD --> BOT
-    BOT --> LOOP
-    LOOP <--> MODELS
-    LOOP --> GATE
-    GATE -->|enqueue| QUEUE --> RUNNER
-    RUNNER --> CC --> WT
-    RUNNER -->|on success| PR --> GH
-    BOT -.-> DB
-    LOOP -.-> DB
-    GATE -.-> DB
-    RUNNER -.-> DB
-    PR -.-> DB
-    REC -.-> DB
-    LOOP -->|status posts| THREAD
-    GATE -->|status posts| THREAD
-    RUNNER -->|status posts| THREAD
-    PR -->|status posts| THREAD
-    THREAD --> OP
-    HOST ==>|spans + metrics| JAEGER
-```
+![ember system dataflow](diagrams/dataflow.svg)
 
 Every arrow into `SessionStore` is the durability seam: the session row is the
 source of truth, so the pipeline survives a process restart. The in-memory
@@ -72,25 +31,7 @@ drivers (the planning loop, the build queue) do not — see §2 and ADR 8.
 One session, one Discord thread, one `sessions` row. Four active states and
 two terminal off-ramps.
 
-```mermaid
-stateDiagram-v2
-    [*] --> PLANNING: /plan
-    PLANNING --> AWAITING_GATE: critic approved · round cap · stalled
-    AWAITING_GATE --> BUILDING: countdown elapsed
-    BUILDING --> PR_OPEN: build ok + draft PR opened
-
-    PLANNING --> ABORTED: /abort
-    AWAITING_GATE --> ABORTED: stop-reaction or /abort
-    BUILDING --> ABORTED: /abort (worktree kept)
-
-    PLANNING --> FAILED: error · restart
-    AWAITING_GATE --> FAILED: error
-    BUILDING --> FAILED: build error · PR handoff failed · restart
-
-    PR_OPEN --> [*]
-    ABORTED --> [*]
-    FAILED --> [*]
-```
+![ember session state machine](diagrams/state-machine.svg)
 
 Restart behaviour differs by state, and the difference is deliberate:
 
@@ -108,36 +49,7 @@ plan forced forward by a backstop is never shown as endorsed.
 
 ## 3. End-to-end sequence — `/plan` to draft PR
 
-```mermaid
-sequenceDiagram
-    actor OP as Operator
-    participant D as Discord
-    participant E as ember
-    participant M as Models · Claude/GPT
-    participant C as Claude Code
-    participant G as GitHub
-
-    OP->>D: /plan brief repo
-    D->>E: interaction, owner-checked
-    E->>D: open thread · session = PLANNING
-
-    loop planning rounds, until approved or backstop
-        E->>M: Claude drafts or revises the plan
-        E->>M: GPT critiques · structured verdict
-        E->>D: post round to the thread
-    end
-
-    E->>D: post converged plan · session = AWAITING_GATE
-    Note over E,D: soft gate — ~5 min veto window, stop-reaction or /abort
-    E->>E: countdown elapses · session = BUILDING · enqueue
-
-    E->>C: claude -p in a fresh git worktree
-    C-->>E: stream-json events
-    E->>D: throttled build status, one edited message
-    C->>C: implement plan, commit on the build branch
-    E->>G: git push + gh pr create --draft
-    E->>D: post PR url · session = PR_OPEN
-```
+![end-to-end sequence from /plan to draft PR](diagrams/sequence.svg)
 
 `/abort` and `/status` are not shown: `/status` reads the session row at any
 time; `/abort` cancels whatever is in flight for the thread (loop, gate, or
@@ -151,27 +63,7 @@ ember registers four `IHostedService`s. Start order matters once:
 `RecoveryService` runs first so the database is consistent before any other
 service acts on it.
 
-```mermaid
-flowchart TB
-    subgraph BOOT["Hosted services — started in registration order"]
-        direction TB
-        H1["1 · RecoveryService<br/>stale PLANNING/BUILDING → FAILED, clean worktrees"]
-        H2["2 · DiscordBotService<br/>connect gateway, register slash commands"]
-        H3["3 · GateService<br/>boot reconcile + 20s countdown poll"]
-        H4["4 · BuildQueue<br/>drain the FIFO build channel"]
-        H1 --> H2 --> H3 --> H4
-    end
-
-    subgraph DI["Singletons resolved by DI"]
-        direction TB
-        S1["SessionStore · ThreadGateway"]
-        S2["Planner · Critic · PlanningLoopRunner"]
-        S3["BuilderRunner · PullRequest"]
-        S4["IChatClient ×2 — keyed 'planner' / 'critic'"]
-    end
-
-    BOOT -.uses.-> DI
-```
+![hosted services and DI composition](diagrams/hosted-services.svg)
 
 `BuildQueue` is registered both as a singleton (so `GateService` and
 `AbortCommand` can reach it) and as the hosted service that drains it.
@@ -180,21 +72,7 @@ flowchart TB
 
 ## 5. Tech stack
 
-```mermaid
-flowchart TB
-    A["Control surface — Discord.Net 3.19 · gateway, slash commands, threads"]
-    B["Runtime — C# / .NET 9 · Generic Host (Microsoft.Extensions.Hosting)"]
-    C["Planning — Microsoft.Extensions.AI IChatClient · one OpenAI-compatible adapter"]
-    D["Builder — headless Claude Code CLI · child process, stream-json"]
-    E["State — SQLite (Microsoft.Data.Sqlite) · one sessions table, WAL"]
-    F["Observability — OpenTelemetry ActivitySource + Meter → OTLP → Jaeger"]
-
-    A --> B
-    B --> C
-    B --> D
-    B --> E
-    B --> F
-```
+![tech stack layers](diagrams/tech-stack.svg)
 
 | Layer | Choice | ADR |
 |---|---|---|
@@ -213,26 +91,7 @@ flowchart TB
 
 The single source of truth. One row per session, keyed by Discord thread id.
 
-```mermaid
-erDiagram
-    sessions {
-        TEXT    thread_id      PK "Discord thread id = session id"
-        TEXT    state             "PLANNING|AWAITING_GATE|BUILDING|PR_OPEN|ABORTED|FAILED"
-        TEXT    gate_reason       "approved|round_cap|stalled · null pre-gate"
-        TEXT    repo              "allowlist key"
-        TEXT    brief             "the operator's request"
-        INTEGER current_round     "planning round counter"
-        TEXT    plan_snapshot     "frozen converged plan · set at gate entry"
-        TEXT    open_issues       "JSON · critic issues open at the gate"
-        INTEGER gate_expires_at   "epoch ms · drives boot reconcile"
-        TEXT    branch_name       "the build branch · ember-slugged"
-        TEXT    worktree_path     "host path · nulled when the worktree is removed"
-        TEXT    pr_url            "draft PR url · set at PR_OPEN"
-        TEXT    last_error        "failure detail"
-        INTEGER created_at        "epoch ms"
-        INTEGER updated_at        "epoch ms"
-    }
-```
+![the sessions table](diagrams/sessions-schema.svg)
 
 ### 6.2 Critic verdict — model output contract
 
@@ -302,27 +161,7 @@ A session's lifecycle is emitted as **four separate traces**, not one. The
 gate countdown and the build span minutes and can cross a restart, so a single
 long-lived span is not viable — see ADR 7.
 
-```mermaid
-flowchart TB
-    subgraph T1["trace · command"]
-        C1["command /plan"]
-    end
-    subgraph T2["trace · planning"]
-        P1["plan.session"]
-        P2["plan.round · round 1"]
-        P3["plan.round · round 2"]
-        P1 --> P2
-        P1 --> P3
-    end
-    subgraph T3["trace · gate"]
-        G1["gate.fire"]
-    end
-    subgraph T4["trace · build"]
-        B1["build.run"]
-        B2["pr.open"]
-        B1 --> B2
-    end
-```
+![the four per-stage traces](diagrams/trace-shape.svg)
 
 The traces correlate by tag (`ember.repo`, `ember.thread_id`), not by a shared
 parent span. `dotnet run -- demo` emits this exact shape synthetically — see

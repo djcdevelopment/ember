@@ -1,0 +1,18 @@
+erDiagram
+    sessions {
+        TEXT    thread_id      PK "Discord thread id = session id"
+        TEXT    state             "PLANNING|AWAITING_GATE|BUILDING|PR_OPEN|ABORTED|FAILED"
+        TEXT    gate_reason       "approved|round_cap|stalled · null pre-gate"
+        TEXT    repo              "allowlist key"
+        TEXT    brief             "the operator request"
+        INTEGER current_round     "planning round counter"
+        TEXT    plan_snapshot     "frozen converged plan · set at gate entry"
+        TEXT    open_issues       "JSON · critic issues open at the gate"
+        INTEGER gate_expires_at   "epoch ms · drives boot reconcile"
+        TEXT    branch_name       "the build branch · ember-slugged"
+        TEXT    worktree_path     "host path · nulled when the worktree is removed"
+        TEXT    pr_url            "draft PR url · set at PR_OPEN"
+        TEXT    last_error        "failure detail"
+        INTEGER created_at        "epoch ms"
+        INTEGER updated_at        "epoch ms"
+    }

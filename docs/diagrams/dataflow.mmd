@@ -1,0 +1,44 @@
+flowchart LR
+    OP([Operator])
+
+    subgraph DISCORD["Discord"]
+        CMD["/plan · /status · /abort"]
+        THREAD["Session thread"]
+    end
+
+    subgraph HOST["ember — .NET Generic Host, always-on"]
+        BOT["DiscordBotService"]
+        LOOP["PlanningLoopRunner"]
+        GATE["GateService"]
+        QUEUE["BuildQueue · FIFO"]
+        RUNNER["BuilderRunner"]
+        PR["PullRequest"]
+        REC["RecoveryService"]
+        DB[("SessionStore<br/>SQLite")]
+    end
+
+    MODELS["Planner = Claude<br/>Critic = GPT<br/>via IChatClient"]
+    CC["headless Claude Code<br/>claude -p --output-format stream-json"]
+    WT["git worktree<br/>branch ember/&lt;slug&gt;"]
+    GH["GitHub<br/>pushed branch + draft PR"]
+    JAEGER[("Jaeger<br/>OTLP :4317")]
+
+    OP --> CMD --> BOT
+    BOT --> LOOP
+    LOOP <--> MODELS
+    LOOP --> GATE
+    GATE -->|enqueue| QUEUE --> RUNNER
+    RUNNER --> CC --> WT
+    RUNNER -->|on success| PR --> GH
+    BOT -.-> DB
+    LOOP -.-> DB
+    GATE -.-> DB
+    RUNNER -.-> DB
+    PR -.-> DB
+    REC -.-> DB
+    LOOP -->|status posts| THREAD
+    GATE -->|status posts| THREAD
+    RUNNER -->|status posts| THREAD
+    PR -->|status posts| THREAD
+    THREAD --> OP
+    HOST ==>|spans + metrics| JAEGER

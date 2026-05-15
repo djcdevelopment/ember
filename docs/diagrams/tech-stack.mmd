@@ -1,0 +1,13 @@
+flowchart TB
+    A["Control surface — Discord.Net 3.19 · gateway, slash commands, threads"]
+    B["Runtime — C# / .NET 9 · Generic Host (Microsoft.Extensions.Hosting)"]
+    C["Planning — Microsoft.Extensions.AI IChatClient · one OpenAI-compatible adapter"]
+    D["Builder — headless Claude Code CLI · child process, stream-json"]
+    E["State — SQLite (Microsoft.Data.Sqlite) · one sessions table, WAL"]
+    F["Observability — OpenTelemetry ActivitySource + Meter → OTLP → Jaeger"]
+
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    B --> F

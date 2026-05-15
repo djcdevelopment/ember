@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> PLANNING: /plan
+    PLANNING --> AWAITING_GATE: critic approved · round cap · stalled
+    AWAITING_GATE --> BUILDING: countdown elapsed
+    BUILDING --> PR_OPEN: build ok + draft PR opened
+
+    PLANNING --> ABORTED: /abort
+    AWAITING_GATE --> ABORTED: stop-reaction or /abort
+    BUILDING --> ABORTED: /abort (worktree kept)
+
+    PLANNING --> FAILED: error · restart
+    AWAITING_GATE --> FAILED: error
+    BUILDING --> FAILED: build error · PR handoff failed · restart
+
+    PR_OPEN --> [*]
+    ABORTED --> [*]
+    FAILED --> [*]

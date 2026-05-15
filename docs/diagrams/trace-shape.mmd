@@ -1,0 +1,19 @@
+flowchart TB
+    subgraph T1["trace · command"]
+        C1["command /plan"]
+    end
+    subgraph T2["trace · planning"]
+        P1["plan.session"]
+        P2["plan.round · round 1"]
+        P3["plan.round · round 2"]
+        P1 --> P2
+        P1 --> P3
+    end
+    subgraph T3["trace · gate"]
+        G1["gate.fire"]
+    end
+    subgraph T4["trace · build"]
+        B1["build.run"]
+        B2["pr.open"]
+        B1 --> B2
+    end
