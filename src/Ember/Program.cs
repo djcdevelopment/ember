@@ -21,7 +21,7 @@ using OpenTelemetry.Trace;
 // it never starts the bot. See Demo/TraceDemo.cs.
 if (TraceDemo.IsRequested(args))
 {
-    await TraceDemo.RunAsync();
+    await TraceDemo.RunAsync(TraceDemo.OtlpEndpoint(args));
     return;
 }
 

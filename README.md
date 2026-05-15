@@ -70,26 +70,30 @@ scopes; ember registers its slash commands on startup.
 dotnet run --project src/Ember
 ```
 
-To see the OpenTelemetry signals without a live run, emit a synthetic trace set
-(real span names and tags, console exporter) — no Discord, no model calls:
+## Observability
+
+ember exports OpenTelemetry traces and metrics over OTLP. The dev setup targets
+the shared Jaeger on this machine (Jaeger v2 all-in-one, built-in OTLP receiver):
+
+```powershell
+# start Jaeger — idempotent, no-op if it is already up
+& "D:\World of Warcraft\Tempo\infra\start-jaeger.ps1"
+```
+
+- `Otel:Endpoint` is set to `http://localhost:4317` in `appsettings.Development.json`
+- Jaeger UI: http://localhost:16686 (service: `ember`)
+
+To see the telemetry without a live run, emit a synthetic — but faithful — trace
+set: the real span names and tags a `/plan` run produces, no Discord or model calls.
 
 ```
-dotnet run --project src/Ember -- demo
+dotnet run --project src/Ember -- demo           # console exporter only
+dotnet run --project src/Ember -- demo --otlp     # also ships traces to Jaeger
 ```
 
-## Ports
-
-ember has no inbound listener — it is a Discord gateway client. Its allocation
-in **portmap** (`D:/work/start/portmap`, project id `ember`, range 18110-18119)
-reserves ports for the local OpenTelemetry collector it exports to:
-
-| Port | Service | Use |
-|---|---|---|
-| 18110 | aspire-dashboard | OTLP collector / dashboard UI |
-| 18111 | aspire-otlp | OTLP gRPC ingest — point `Otel:Endpoint` here |
-
-Before changing ports, check portmap:
-`python D:/work/start/portmap/portmap.py check <port>`.
+ember has no inbound listener — it is a Discord gateway client — so it owns no
+ports. It is tracked in **portmap** as project `ember` with no services, and
+exports to the shared Jaeger collector (portmap project `tempo`, OTLP `:4317`).
 
 ## Commands
 

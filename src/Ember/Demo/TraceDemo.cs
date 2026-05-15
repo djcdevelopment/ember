@@ -8,27 +8,48 @@ using OpenTelemetry.Trace;
 namespace Ember.Demo;
 
 /// <summary>
-/// Emits a synthetic — but faithful — set of ember traces and metrics to the console
-/// exporter: the exact span names and tags a real <c>/plan</c> run produces, with realistic
-/// nesting and timings. Invoked with <c>dotnet run -- demo</c>; it never starts the bot,
-/// touches Discord, or calls a model. It is a way to *see* the telemetry, not a test.
+/// Emits a synthetic — but faithful — set of ember traces and metrics: the exact span names
+/// and tags a real <c>/plan</c> run produces, with realistic nesting and timings. Invoked
+/// with <c>dotnet run -- demo</c> (console exporter) or <c>dotnet run -- demo --otlp</c>
+/// (also ships traces to Jaeger). It never starts the bot, touches Discord, or calls a
+/// model — it is a way to *see* the telemetry, not a test.
 /// </summary>
 public static class TraceDemo
 {
+    private const string DefaultOtlpEndpoint = "http://localhost:4317";
+
     /// <summary>True when the process args ask for the trace demo instead of the bot.</summary>
     public static bool IsRequested(string[] args) =>
         args.Any(a => a.Equals("demo", StringComparison.OrdinalIgnoreCase)
                    || a.Equals("--demo", StringComparison.OrdinalIgnoreCase));
 
-    public static async Task RunAsync()
+    /// <summary>
+    /// The OTLP endpoint the demo should also export traces to, or null for console-only.
+    /// <c>--otlp</c> targets the shared Jaeger on <c>localhost:4317</c>; <c>--otlp &lt;url&gt;</c>
+    /// overrides it.
+    /// </summary>
+    public static string? OtlpEndpoint(string[] args)
     {
-        // An isolated telemetry pipeline — console exporters only, independent of the
-        // production OpenTelemetry wiring in Program.cs.
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+        var i = Array.FindIndex(args, a => a.Equals("--otlp", StringComparison.OrdinalIgnoreCase));
+        if (i < 0)
+            return null;
+        if (i + 1 < args.Length && Uri.TryCreate(args[i + 1], UriKind.Absolute, out _))
+            return args[i + 1];
+        return DefaultOtlpEndpoint;
+    }
+
+    public static async Task RunAsync(string? otlpEndpoint)
+    {
+        // An isolated telemetry pipeline, independent of the production wiring in Program.cs.
+        // The console exporter is always on; --otlp also ships the *traces* to a collector
+        // (Jaeger is a tracing backend — metrics stay console-only).
+        var tracerBuilder = Sdk.CreateTracerProviderBuilder()
             .ConfigureResource(r => r.AddService("ember"))
             .AddSource(Telemetry.SourceName)
-            .AddConsoleExporter()
-            .Build();
+            .AddConsoleExporter();
+        if (otlpEndpoint is not null)
+            tracerBuilder.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+        using var tracerProvider = tracerBuilder.Build();
 
         using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .ConfigureResource(r => r.AddService("ember"))
@@ -36,7 +57,7 @@ public static class TraceDemo
             .AddConsoleExporter()
             .Build();
 
-        PrintHeader();
+        PrintHeader(otlpEndpoint);
 
         // ── One full /plan -> draft-PR session ────────────────────────────────────────
         // ember emits a session's lifecycle as four separate traces, not one: the gate
@@ -60,11 +81,11 @@ public static class TraceDemo
         Telemetry.BuildDuration.Record(204.6, Tag("outcome", "success"));
         Telemetry.BuildDuration.Record(47.2, Tag("outcome", "failed"));
 
-        tracerProvider.ForceFlush();
-        meterProvider.ForceFlush();
-        await Task.Delay(250); // let the console exporter drain
+        tracerProvider.ForceFlush(5000); // block until traces are exported (incl. over OTLP)
+        meterProvider.ForceFlush(5000);
+        await Task.Delay(150);
 
-        PrintFooter();
+        PrintFooter(otlpEndpoint);
     }
 
     // ── The four lifecycle traces ─────────────────────────────────────────────────────
@@ -175,13 +196,17 @@ public static class TraceDemo
         Console.WriteLine("──────────────────────────────────────────────────────────────────────");
     }
 
-    private static void PrintHeader()
+    private static void PrintHeader(string? otlpEndpoint)
     {
         Console.WriteLine();
         Console.WriteLine("ember — synthetic OpenTelemetry trace demo");
         Console.WriteLine();
         Console.WriteLine("Emits the spans a real /plan -> draft-PR run produces — real span names");
         Console.WriteLine("and tags — to the console exporter. No Discord, no model calls, no build.");
+        if (otlpEndpoint is not null)
+            Console.WriteLine($"Also exporting traces over OTLP to {otlpEndpoint}.");
+        else
+            Console.WriteLine("Console exporter only — pass --otlp to also ship traces to Jaeger.");
         Console.WriteLine();
         Console.WriteLine("Expected shape (each top-level span below is its own trace):");
         Console.WriteLine();
@@ -197,12 +222,15 @@ public static class TraceDemo
         Console.WriteLine("the tree together; Tags carry ember's attributes.");
     }
 
-    private static void PrintFooter()
+    private static void PrintFooter(string? otlpEndpoint)
     {
         Console.WriteLine();
         Console.WriteLine("──────────────────────────────────────────────────────────────────────");
         Console.WriteLine("Demo complete — 5 traces (8 spans) and 3 metrics emitted above.");
-        Console.WriteLine("Set Otel:Endpoint to ship the same signals to an OTLP collector.");
+        if (otlpEndpoint is not null)
+            Console.WriteLine("Traces shipped over OTLP — view them at http://localhost:16686 (service: ember).");
+        else
+            Console.WriteLine("Pass --otlp to also ship the traces to Jaeger (http://localhost:16686).");
         Console.WriteLine("──────────────────────────────────────────────────────────────────────");
     }
 }
