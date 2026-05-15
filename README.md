@@ -32,7 +32,14 @@ Personal dev tool, single operator — not a product.
 | 2 | The builder — headless Claude Code in a git worktree | Built |
 | 3 | PR handoff and hardening | Built |
 
-Full design: [PLAN.md](PLAN.md). Architecture decisions: [docs/adr](docs/adr).
+## Documentation
+
+| Doc | What |
+|---|---|
+| [PLAN.md](PLAN.md) | The full design and the phased build plan |
+| [docs/architecture.md](docs/architecture.md) | Diagrams — dataflow, state machine, sequence, data contracts, telemetry |
+| [docs/adr](docs/adr) | Architecture decision records (Nygard-style) |
+| [docs/retrospective.md](docs/retrospective.md) | Build retrospective — deviations, decisions, what is not yet verified |
 
 ## Stack
 
@@ -121,4 +128,8 @@ src/Ember/
   Demo/TraceDemo.cs             synthetic OTel trace demo (dotnet run -- demo)
   Models/ChatClientFactory.cs   IChatClient builder
   Observability/Telemetry.cs    ActivitySource + Meter
+docs/
+  architecture.md               diagrams — dataflow, state machine, contracts
+  retrospective.md              build retrospective
+  adr/                          architecture decision records
 ```
