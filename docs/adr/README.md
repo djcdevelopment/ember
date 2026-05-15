@@ -1,0 +1,12 @@
+# Architecture Decision Records
+
+Significant architecture decisions for ember — one file per decision,
+Nygard-style (Context / Decision / Consequences).
+
+| # | Decision |
+|---|---|
+| [1](0001-discord-control-surface.md) | Discord as the control surface; async, stateful, thread-per-session |
+| [2](0002-csharp-dotnet-agent-framework.md) | C# / .NET on Microsoft Agent Framework |
+| [3](0003-openai-compatible-ichatclient.md) | A universal OpenAI-compatible IChatClient |
+| [4](0004-builder-headless-claude-code.md) | The builder is headless Claude Code, driven via its CLI |
+| [5](0005-critic-driven-loop-and-soft-gate.md) | Critic-driven loop termination and a resumable soft gate |

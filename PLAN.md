@@ -1,6 +1,6 @@
 # ember — Implementation Plan
 
-Status: drafted 2026-05-15 · not yet greenlit for build
+Status: Phases 0-1 built and committed (2026-05-15). Phases 2-3 planned.
 
 ## What ember is
 
@@ -28,8 +28,8 @@ Off-ramps: `ABORTED` (operator) and `FAILED` (error) from any active state.
 
 - **Runtime:** C# / .NET 8+, Generic Host (`Microsoft.Extensions.Hosting`) — long-running worker.
 - **Bot:** Discord.Net — gateway, slash commands, threads, reactions.
-- **Agents:** Microsoft Agent Framework (1.0 GA, April 2026) — planner + critic as `ChatClientAgent` over `IChatClient`.
-- **Models:** first-party MAF connectors. POC = Claude (planner) + OpenAI (critic). `IChatClient` keeps the provider swappable — MAF's Ollama connector for later local-model use.
+- **Agents:** the planner and critic call `Microsoft.Extensions.AI.IChatClient` directly (the abstraction underneath Microsoft Agent Framework, 1.0 GA April 2026).
+- **Models:** one OpenAI-compatible `IChatClient` adapter serves every provider — OpenAI, Ollama, and Anthropic via its OpenAI-compatible endpoint — selected by config. See `docs/adr/0003`.
 - **Builder:** headless Claude Code via CLI — `claude -p --output-format stream-json`, run as a child process. The CLI is the language-neutral headless interface; there is no C# Agent SDK.
 - **State:** SQLite via `Microsoft.Data.Sqlite` — one `sessions` table.
 - **Observability:** OpenTelemetry — `UseOpenTelemetry()` on the `IChatClient` pipeline (model + tool spans, GenAI semantic conventions) plus ember's own `ActivitySource`. OTLP export.
@@ -171,10 +171,12 @@ Jaeger / Application Insights.
 
 ## Provider strategy
 
-Planner and critic reach models only through `IChatClient`. POC = Claude +
-OpenAI connectors. Switching either to a local model is a connector swap
-(MAF's Ollama connector) — no change to loop code. The builder (Claude Code)
-stays on a frontier Anthropic model; localizing it is out of scope for v1.
+Planner and critic reach models only through `IChatClient`. As built, a single
+OpenAI-compatible adapter serves every provider — OpenAI, Ollama, and Anthropic
+(via its OpenAI-compatible endpoint) — selected by config (see `docs/adr/0003`).
+Switching the planner or critic to a local model is a config change, not a code
+change. The builder (Claude Code) stays on a frontier Anthropic model;
+localizing it is out of scope for v1.
 
 ## Security
 
