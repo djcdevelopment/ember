@@ -1,5 +1,6 @@
 using System.ClientModel;
 using Ember.Config;
+using Ember.Observability;
 using Microsoft.Extensions.AI;
 using OpenAI;
 
@@ -26,7 +27,15 @@ public static class ChatClientFactory
         var apiKey = string.IsNullOrEmpty(options.ApiKey) ? "unset" : options.ApiKey;
         var client = new OpenAIClient(new ApiKeyCredential(apiKey), clientOptions);
 
-        return client.GetChatClient(options.Model).AsIChatClient();
+        // Wrap in the OpenTelemetry chat client so every planner/critic call emits a span
+        // with model, token usage, and duration. The source name is ember's own "Ember"
+        // ActivitySource/Meter — already registered with OpenTelemetry in Program.cs, so
+        // these spans and metrics need no extra wiring.
+        return client.GetChatClient(options.Model)
+            .AsIChatClient()
+            .AsBuilder()
+            .UseOpenTelemetry(sourceName: Telemetry.SourceName)
+            .Build();
     }
 
     private static Uri? ResolveEndpoint(ModelOptions options)
