@@ -1,8 +1,9 @@
 # ember — Implementation Plan
 
 Status: Phases 0-3 built (2026-05-15) — the full `/plan` -> draft PR pipeline.
-Paused 2026-05-16 pending local-inference hardware (2x Intel Arc Pro B70); the
-next step is standing up vLLM for the planner/critic — see `docs/adr/0009`.
+The planner/critic loop is being rehearsed on local models ahead of the Intel
+Arc hardware (ADR 9, ADR 10) — run end to end on Ollama via a sole-residency
+swap proxy. See `docs/local-loop-runbook.md` and the local-loop retrospective.
 
 ## What ember is
 

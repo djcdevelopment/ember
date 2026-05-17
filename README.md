@@ -32,14 +32,20 @@ Personal dev tool, single operator — not a product.
 | 2 | The builder — headless Claude Code in a git worktree | Built |
 | 3 | PR handoff and hardening | Built |
 
+Beyond the four phases, the planner/critic loop is being rehearsed on local
+models — see the [local-loop retrospective](docs/retrospective-local-loop.md).
+
 ## Documentation
 
 | Doc | What |
 |---|---|
 | [PLAN.md](PLAN.md) | The full design and the phased build plan |
 | [docs/architecture.md](docs/architecture.md) | Diagrams — dataflow, state machine, sequence, data contracts, telemetry |
+| [docs/local-loop-runbook.md](docs/local-loop-runbook.md) | Running the planner/critic on local models |
 | [docs/adr](docs/adr) | Architecture decision records (Nygard-style) |
-| [docs/retrospective.md](docs/retrospective.md) | Build retrospective — deviations, decisions, what is not yet verified |
+| [docs/retrospective.md](docs/retrospective.md) | Build retrospective — Phases 0–3 |
+| [docs/retrospective-local-loop.md](docs/retrospective-local-loop.md) | Local-loop rehearsal retrospective |
+| [RnD/](RnD) | Research notebook — local inference, the loop, the builder, observability, Discord |
 
 ## Stack
 
@@ -90,15 +96,13 @@ dotnet run --project src/Ember -- plan "add a /ping command" ember
 
 The planner and critic reach models through one OpenAI-compatible `IChatClient`
 ([ADR 3](docs/adr/0003-openai-compatible-ichatclient.md)), so pointing either at
-a local model is a config change. The Development config runs the critic on a
-local Ollama model:
+a local model is a config change. The Development config runs the whole loop on
+**local Ollama models** through a sole-residency swap proxy
+([`tools/OllamaSwapProxy`](tools/OllamaSwapProxy)) — the full procedure is in the
+[local-loop runbook](docs/local-loop-runbook.md). The base `appsettings.json`
+keeps the hosted planner and critic.
 
-```json
-"Models": { "Critic": { "Provider": "ollama", "Model": "qwen3.5:9b-q4_K_M" } }
-```
-
-Set `Provider` back to `openai` (with a `Model` and `ApiKey`) for a hosted
-critic. The critic requests JSON-object mode, which keeps smaller local models'
+The critic requests JSON-object mode, which keeps smaller local models'
 structured verdicts parseable.
 
 ## Observability
@@ -145,7 +149,7 @@ src/Ember/
   Config/Options.cs             strongly-typed options
   Sessions/                     Session model + SQLite SessionStore
   Discord/                      bot service, slash commands, thread helpers
-  Loop/                         Planner, Critic, CriticVerdict, PlanningLoopRunner
+  Loop/                         Planner, Critic, CriticVerdict, PlanningLoopRunner, RepoContext
   Gate/GateService.cs           the resumable soft-gate poller
   Build/                        Worktree, PlanArtifact, BuilderRunner, BuildQueue, PullRequest
   Sessions/RecoveryService.cs   boot recovery for interrupted sessions
@@ -153,8 +157,15 @@ src/Ember/
   Demo/TraceDemo.cs             synthetic OTel trace demo (dotnet run -- demo)
   Models/ChatClientFactory.cs   IChatClient builder
   Observability/Telemetry.cs    ActivitySource + Meter
+tools/
+  OllamaSwapProxy/              sole-residency model swapper for the local loop
+scripts/
+  serve-local.sh                vLLM launcher for the Arc-target local path
 docs/
   architecture.md               diagrams — dataflow, state machine, contracts
-  retrospective.md              build retrospective
+  local-loop-runbook.md         running the planner/critic on local models
+  retrospective.md              build retrospective (Phases 0–3)
+  retrospective-local-loop.md   local-loop rehearsal retrospective
   adr/                          architecture decision records
+RnD/                            research notebook — inference, loop, builder, …
 ```

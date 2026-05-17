@@ -149,6 +149,7 @@ so no tracked `.gitignore` churn lands in the operator's repo.
 | span | `gate.fire` | `ember.gate_reason` |
 | span | `build.run` | `ember.repo`, `ember.thread_id`, `ember.branch`, `ember.build.outcome` |
 | span | `pr.open` | `ember.branch`, `ember.pr_url` |
+| span | planner / critic model call (nested in `plan.round`) | `gen_ai.*` — model, token usage, duration |
 | counter | `ember.commands.handled` | `command` |
 | counter | `ember.builds.completed` | `outcome` |
 | histogram | `ember.build.duration` (s) | `outcome` |
