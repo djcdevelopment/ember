@@ -258,7 +258,70 @@ public sealed class BuilderRunner
             return await FailAsync(session, status, activity, reason, worktree.Path);
         }
 
+        try
+        {
+            var verifyFailure = await VerifyBuildAsync(worktree, status, ct);
+            if (verifyFailure is not null)
+                return await FailAsync(session, status, activity, verifyFailure, worktree.Path);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return await AbortAsync(session, status, worktree);
+        }
+
         return await SucceedAsync(session, repoPath, status, worktree, digest, activity, ct);
+    }
+
+    /// <summary>
+    /// Runs the configured verify command in the build worktree — an external check that does
+    /// not trust the builder's self-reported success. Returns <c>null</c> when verification
+    /// passes (or is disabled by an empty command), or a failure reason when it does not.
+    /// </summary>
+    private async Task<string?> VerifyBuildAsync(WorktreeInfo worktree, StatusMessage status, CancellationToken ct)
+    {
+        var command = _options.Builder.VerifyCommand?.Trim();
+        if (string.IsNullOrEmpty(command))
+            return null;   // the gate is disabled
+
+        await status.UpdateAsync($"🔍 Build finished — verifying with `{command}`…", force: true);
+
+        var (shell, flag) = OperatingSystem.IsWindows() ? ("cmd.exe", "/c") : ("/bin/sh", "-c");
+        var timeout = TimeSpan.FromMinutes(Math.Max(1, _options.Builder.VerifyTimeoutMinutes));
+        using var timeoutCts = new CancellationTokenSource(timeout);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+        ProcessRunner.Result result;
+        try
+        {
+            result = await ProcessRunner.RunAsync(shell, new[] { flag, command }, worktree.Path, linked.Token);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+        {
+            return $"the verify command `{command}` exceeded its {timeout.TotalMinutes:0}-minute limit.";
+        }
+
+        if (result.Ok)
+            return null;
+
+        var reason = $"verification failed — `{command}` exited with code {result.ExitCode}.";
+        var tail = VerifyTail(result);
+        if (tail is not null)
+            reason += $"\n```\n{tail}\n```";
+        return reason;
+    }
+
+    /// <summary>The tail of a failed verify command's output, clipped for a Discord message.</summary>
+    private static string? VerifyTail(ProcessRunner.Result result)
+    {
+        var text = result.StdOut.Trim();
+        if (text.Length == 0)
+            text = result.StdErr.Trim();
+        if (text.Length == 0)
+            return null;
+
+        const int max = 1200;
+        text = text.Replace("```", "ʼʼʼ");
+        return text.Length <= max ? text : "…" + text[^max..];
     }
 
     private async Task<Outcome> SucceedAsync(

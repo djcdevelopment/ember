@@ -85,6 +85,17 @@ public sealed class BuilderOptions
     /// </summary>
     public double MaxBudgetUsd { get; set; } = 10.0;
 
+    /// <summary>
+    /// Command run in the build worktree after the builder finishes and before the draft PR
+    /// is opened — an external check that does not trust the builder's self-reported success.
+    /// A non-zero exit fails the session closed: no PR, worktree kept. Empty disables the
+    /// gate. One global command for now — a non-.NET repo would need this changed.
+    /// </summary>
+    public string VerifyCommand { get; set; } = "dotnet build";
+
+    /// <summary>Kill the verify command and fail the build if it runs longer than this.</summary>
+    public int VerifyTimeoutMinutes { get; set; } = 10;
+
     /// <summary>Extra CLI arguments appended verbatim to every builder invocation.</summary>
     public List<string> ExtraArgs { get; set; } = new();
 
