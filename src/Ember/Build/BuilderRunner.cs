@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Discord;
@@ -364,13 +365,21 @@ public sealed class BuilderRunner
 
     private (string FileName, IReadOnlyList<string> Args) BuildArguments((string FileName, string[] Prefix) resolved)
     {
+        var builder = _options.Builder;
         var args = new List<string>(resolved.Prefix)
         {
             "-p", "--output-format", "stream-json", "--verbose",
         };
-        if (_options.Builder.SkipPermissions)
+        if (builder.Bare)
+            args.Add("--bare");
+        if (builder.SkipPermissions)
             args.Add("--dangerously-skip-permissions");
-        args.AddRange(_options.Builder.ExtraArgs);
+        if (builder.MaxBudgetUsd > 0)
+        {
+            args.Add("--max-budget-usd");
+            args.Add(builder.MaxBudgetUsd.ToString(CultureInfo.InvariantCulture));
+        }
+        args.AddRange(builder.ExtraArgs);
         return (resolved.FileName, args);
     }
 

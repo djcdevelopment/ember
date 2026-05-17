@@ -68,6 +68,23 @@ public sealed class BuilderOptions
     /// </summary>
     public bool SkipPermissions { get; set; } = true;
 
+    /// <summary>
+    /// Run the builder in <c>--bare</c> mode: no hooks, no auto-memory, no CLAUDE.md
+    /// auto-discovery, no plugin/MCP inheritance — the operator's personal <c>~/.claude</c>
+    /// never bleeds into an unattended build. Off by default: <c>--bare</c> also forces
+    /// Anthropic auth to <c>ANTHROPIC_API_KEY</c> (or apiKeyHelper via <c>--settings</c>) and
+    /// never reads an OAuth/keychain login — enable it only once the builder authenticates
+    /// with an API key.
+    /// </summary>
+    public bool Bare { get; set; }
+
+    /// <summary>
+    /// Hard ceiling on one build's API spend in USD, via <c>--max-budget-usd</c>. An
+    /// unattended builder that loops is a real cost risk; a normal plan-implementation build
+    /// runs well under this. 0 disables the cap.
+    /// </summary>
+    public double MaxBudgetUsd { get; set; } = 10.0;
+
     /// <summary>Extra CLI arguments appended verbatim to every builder invocation.</summary>
     public List<string> ExtraArgs { get; set; } = new();
 
