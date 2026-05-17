@@ -89,6 +89,14 @@ public sealed class ModelOptions
 
     /// <summary>API key. Secret — set via user-secrets or environment.</summary>
     public string ApiKey { get; set; } = "";
+
+    /// <summary>
+    /// Per-request network timeout, seconds. A non-streaming planner/critic call holds one
+    /// HTTP request open for a cold model-load plus the full generation; the OpenAI client's
+    /// ~100s default is too short for an unattended local run. Also the loop's only per-call
+    /// backstop — a hung server fails the turn here rather than blocking until morning.
+    /// </summary>
+    public int RequestTimeoutSeconds { get; set; } = 300;
 }
 
 /// <summary>Planner and critic model configuration.</summary>

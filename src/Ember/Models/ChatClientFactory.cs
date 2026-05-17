@@ -20,6 +20,9 @@ public static class ChatClientFactory
         if (endpoint is not null)
             clientOptions.Endpoint = endpoint;
 
+        // The default (~100s) cannot cover a cold local model-load plus a full generation.
+        clientOptions.NetworkTimeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
+
         var apiKey = string.IsNullOrEmpty(options.ApiKey) ? "unset" : options.ApiKey;
         var client = new OpenAIClient(new ApiKeyCredential(apiKey), clientOptions);
 

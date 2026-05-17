@@ -14,3 +14,4 @@ Nygard-style (Context / Decision / Consequences).
 | [7](0007-per-stage-traces.md) | Per-stage traces, not one long-lived session span |
 | [8](0008-boot-recovery-fails-closed.md) | Boot recovery fails interrupted work closed |
 | [9](0009-local-inference-on-intel-arc.md) | Local inference on the Intel Arc hardware uses vLLM, not Ollama |
+| [10](0010-rehearse-local-loop-on-nvidia.md) | Rehearse the local planning loop on the NVIDIA card before the Arc hardware |

@@ -1,0 +1,4 @@
+# Shell scripts run under WSL2 (ADR 10) — they must keep LF endings.
+# Without this, core.autocrlf on a Windows host rewrites them to CRLF and
+# WSL fails to launch them with "bad interpreter: ^M".
+*.sh text eol=lf

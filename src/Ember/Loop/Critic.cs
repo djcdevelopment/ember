@@ -13,6 +13,11 @@ public sealed class Critic
         problems: gaps, wrong assumptions, missing acceptance criteria, unhandled failure
         modes, scope creep. Do NOT raise style preferences.
 
+        The user message includes the target repo's tracked-file list. Treat it as
+        ground truth: if the plan modifies or references a file path that is not in
+        that list, raise a "blocking" issue — the builder cannot edit a file that
+        does not exist.
+
         Respond with ONLY a JSON object — no prose, no markdown fences:
         {
           "assessment": "<one sentence overall read>",
@@ -44,13 +49,15 @@ public sealed class Critic
         _logger = logger;
     }
 
-    /// <summary>Reviews a plan against the brief and returns a structured verdict.</summary>
-    public async Task<CriticVerdict> ReviewAsync(string brief, string plan, CancellationToken ct)
+    /// <summary>Reviews a plan against the brief and repo context, returning a structured verdict.</summary>
+    public async Task<CriticVerdict> ReviewAsync(
+        string brief, string plan, string repoContext, CancellationToken ct)
     {
         var messages = new List<ChatMessage>
         {
             new(ChatRole.System, SystemPrompt),
-            new(ChatRole.User, $"Brief:\n{brief}\n\nPlan to review:\n{plan}"),
+            new(ChatRole.User,
+                $"Brief:\n{brief}\n\nTarget repo context:\n{repoContext}\n\nPlan to review:\n{plan}"),
         };
 
         for (var attempt = 1; attempt <= 2; attempt++)

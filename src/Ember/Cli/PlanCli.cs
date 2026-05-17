@@ -105,7 +105,7 @@ public static class PlanCli
         {
             ct.ThrowIfCancellationRequested();
 
-            var verdict = await Step("critic reviews", () => critic.ReviewAsync(brief, plan, ct));
+            var verdict = await Step("critic reviews", () => critic.ReviewAsync(brief, plan, repoContext, ct));
             PrintVerdict(verdict);
 
             if (verdict.Approved) { gateReason = "approved"; break; }

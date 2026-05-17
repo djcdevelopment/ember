@@ -87,7 +87,7 @@ public sealed class PlanningLoopRunner
                 using (var round = Telemetry.Activity.StartActivity("plan.round"))
                 {
                     round?.SetTag("ember.round", session.CurrentRound);
-                    verdict = await _critic.ReviewAsync(session.Brief, plan, ct);
+                    verdict = await _critic.ReviewAsync(session.Brief, plan, repoContext, ct);
                 }
                 await _threads.PostAsync(session.ThreadId, FormatVerdict(session.CurrentRound, verdict));
 
