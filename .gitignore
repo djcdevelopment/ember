@@ -8,3 +8,6 @@ ember.db
 ember.db-wal
 ember.db-shm
 worktrees/
+
+# swap-proxy run log
+swaps.jsonl
