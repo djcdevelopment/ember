@@ -1,7 +1,7 @@
 # ember — local-loop rehearsal retrospective
 
 _Written 2026-05-17, after the RnD research, the four-run Ollama rehearsal, the
-swap proxy, and the cheap-wins hardening pass._
+swap proxy, the cheap-wins hardening pass, and the build-verify gate._
 
 ## What this chapter was
 
@@ -23,6 +23,7 @@ tool, and a builder-hardening pass.
 | Fix: `RepoContext` feeds the planner the real file tree; the critic gets repo context | `7606bff` |
 | `OllamaSwapProxy` — sole-residency model swapper, with a JSONL run-log and nvidia-smi snapshots | `7606bff`, `ca93967` |
 | Builder hardening — `--bare`, `--max-budget-usd`; planner/critic OpenTelemetry | `e9e6533`, `af55ab9` |
+| Build-verify gate — an external verify command in the worktree before the draft PR | `2374024` |
 
 ## What went well
 
@@ -70,8 +71,9 @@ tool, and a builder-hardening pass.
 
 - **`qwen3:14b` as a stronger planner** — the obvious next experiment, blocked
   while the GPU is occupied by other work on the card.
-- **The builder hardening** (`--bare`, `--max-budget-usd`) — build-verified, not
-  run; the builder needs `ANTHROPIC_API_KEY` and an authenticated `gh`.
+- **The builder hardening** — `--bare`, `--max-budget-usd`, and the build-verify
+  gate — build-verified, not run; exercising the builder needs `ANTHROPIC_API_KEY`
+  and an authenticated `gh`.
 - **The vLLM server path** — deferred to the Arc hardware (ADR 10).
 - **A live Discord `/plan` → build → PR** — still never run end to end (carried
   over from the build retrospective).
@@ -95,6 +97,8 @@ tool, and a builder-hardening pass.
 
 - `qwen3:14b` as planner when the GPU frees — does a stronger planner stop the
   round-3 regression and reach a true `approved`?
-- The build-verify gate (RnD stream 03) — GPU-free, implementable now, and it
-  closes the "unverified self-report" gap the research flagged across streams.
+- The critic `Evidence` field (RnD stream 02) — make the critic quote plan text
+  for each issue, killing the bare-noun nitpicks run 02 exposed. GPU-free.
+- A golden-set eval harness (RnD streams 02, 04) — the measurement layer that
+  turns every later loop change into a measured change.
 - The vLLM / Arc path when the B70s arrive (ADR 9, ADR 10).

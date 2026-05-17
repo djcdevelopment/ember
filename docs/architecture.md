@@ -179,6 +179,10 @@ structural, not sandboxed:
   on its own branch; it never touches the operator's working tree or `main`.
 - **ember owns the remote** — the builder gets no push or PR credentials.
   Commit happens inside the worktree; `push` and `gh pr create` are ember's.
+- **Verified build** — before the PR is opened, ember runs a configurable
+  verify command (`Builder.VerifyCommand`, default `dotnet build`) in the
+  worktree and fails the session closed if it does not pass; the builder's
+  self-reported success is not taken on trust.
 - **Draft PR only** — output is always a draft PR, never an auto-merge.
 - **Soft-gate veto** — nothing builds until the operator's countdown elapses
   without an abort.
