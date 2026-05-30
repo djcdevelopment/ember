@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "archetype": "presence",
+  "topology": "centered",
+  "conformance": "canonical",
+  "intent": null,
+  "constellation": {
+    "name": "GAD",
+    "description": "Goats After Dark \u2014 WoW guild software constellation",
+    "root_path": "D:\\work\\gad",
+    "pm_workspace": "pm/"
+  },
+  "identity": {
+    "github_org": "djcdevelopment",
+    "ado_org": "https://dev.azure.com/steppeintegrations",
+    "ado_project": "GAD",
+    "ado_area_path_root": "GAD",
+    "ado_team": "GAD Team"
+  },
+  "discord": {
+    "guild_name": "Goats After Dark",
+    "bot_account": "GoatHerder",
+    "token_file": "D:\\work\\Guild\\.env.local",
+    "channels": {
+      "pm": "flapski-pm",
+      "build_log": "build-log",
+      "additional": [
+        "start-here",
+        "feedback",
+        "a-builders-journey"
+      ]
+    },
+    "embed_palette": {
+      "saga": 14713916,
+      "build_log": 9205843
+    }
+  },
+  "saga": {
+    "active_epic_ids": [
+      79,
+      80,
+      81,
+      95,
+      103
+    ],
+    "delivery_plan_url": "https://dev.azure.com/steppeintegrations/GAD/_apps/hub/ms.vss-plans.delivery-plans-hub"
+  },
+  "repos": [
+    {
+      "name": "tempo",
+      "kind": "git",
+      "role": "centerpiece \u2014 Windows-native, local-first WoW raid-leader tool (.NET 9)",
+      "producer_type": "engine",
+      "github": "djcdevelopment/tempo",
+      "area_path": "GAD\\tempo",
+      "visibility": "private",
+      "local_path": "D:\\World of Warcraft\\Tempo",
+      "summary_doc": "repos/tempo.md",
+      "primary": true,
+      "depends_on": [],
+      "parent": null,
+      "aliases": [],
+      "surfaces": [
+        {
+          "name": "MainWindow",
+          "kind": "peer-tab",
+          "deployment_url": null,
+          "lifecycle": "active"
+        },
+        {
+          "name": "RaidView",
+          "kind": "react-bundle",
+          "deployment_url": null,
+          "lifecycle": "active"
+        },
+        {
+          "name": "Lantern (peer tab)",
+          "kind": "peer-tab",
+          "deployment_url": null,
+          "lifecycle": "active"
+        }
+      ],
+      "audience": "raid leaders \u2014 bandwidth amplification, in-flight",
+      "lifecycle": "active",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "raidui",
+      "kind": "git",
+      "role": "web viewer \u2014 legacy src/ + active newui/ cloud face",
+      "producer_type": "operational_viewer",
+      "github": "djcdevelopment/raidui",
+      "area_path": "GAD\\raidui",
+      "visibility": "private",
+      "local_path": "D:\\work\\raidui",
+      "summary_doc": "repos/raidui.md",
+      "primary": false,
+      "depends_on": [],
+      "parent": null,
+      "aliases": [
+        "newui"
+      ],
+      "surfaces": [
+        {
+          "name": "src (legacy)",
+          "kind": "react-bundle",
+          "deployment_url": null,
+          "lifecycle": "maintenance"
+        },
+        {
+          "name": "newui (active cloud face)",
+          "kind": "web-app",
+          "deployment_url": "https://app.goatsafterdark.org/newui/",
+          "lifecycle": "active"
+        }
+      ],
+      "audience": null,
+      "lifecycle": "deprecating",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "lantern",
+      "kind": "git",
+      "role": "player-first chronicle viewer \u2014 peer tab inside Tempo + cloud prerender",
+      "producer_type": "operational_viewer",
+      "github": "djcdevelopment/lantern",
+      "area_path": "GAD\\lantern",
+      "visibility": "public",
+      "local_path": "D:\\work\\lantern",
+      "summary_doc": "repos/lantern.md",
+      "primary": false,
+      "depends_on": [
+        "tempo"
+      ],
+      "parent": null,
+      "aliases": [],
+      "surfaces": [],
+      "audience": "individual raiders \u2014 post-raid personal lens",
+      "lifecycle": "active",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "ember",
+      "kind": "git",
+      "role": "Claude\u2194GPT planning bot \u2014 build hand-off pipeline",
+      "producer_type": "artifact_synthesis",
+      "github": "djcdevelopment/ember",
+      "area_path": "GAD\\ember",
+      "visibility": "public",
+      "local_path": "D:\\work\\ember",
+      "summary_doc": "repos/ember.md",
+      "primary": false,
+      "depends_on": [],
+      "parent": null,
+      "aliases": [],
+      "surfaces": [],
+      "audience": "Derek (internal dev tooling, not user-facing)",
+      "lifecycle": "shipped",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "hearth",
+      "kind": "git",
+      "role": "guild-memory website (Next.js + Postgres) + production GoatHerder Discord bot",
+      "producer_type": "presence_surface",
+      "github": "djcdevelopment/goatsafterdark",
+      "area_path": "GAD\\hearth",
+      "visibility": "private",
+      "local_path": "D:\\work\\guild",
+      "summary_doc": "repos/hearth.md",
+      "primary": false,
+      "depends_on": [
+        "campfire",
+        "raidui",
+        "lantern"
+      ],
+      "parent": null,
+      "aliases": [
+        "goatsafterdark"
+      ],
+      "surfaces": [
+        {
+          "name": "hearth (web app)",
+          "kind": "web-app",
+          "deployment_url": "https://goatsafterdark.org",
+          "lifecycle": "active"
+        },
+        {
+          "name": "GoatHerder (production bot)",
+          "kind": "bot-daemon",
+          "deployment_url": null,
+          "lifecycle": "active"
+        }
+      ],
+      "audience": null,
+      "lifecycle": "active",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "campfire",
+      "kind": "git",
+      "role": "BYOH substrate (guild-data API; 7-package pnpm monorepo)",
+      "producer_type": "telemetry_ingest",
+      "github": "djcdevelopment/campfire",
+      "area_path": "GAD\\campfire",
+      "visibility": "private",
+      "local_path": "D:\\work\\campfire",
+      "summary_doc": "repos/campfire.md",
+      "primary": false,
+      "depends_on": [],
+      "parent": null,
+      "aliases": [],
+      "surfaces": [],
+      "audience": null,
+      "lifecycle": "shipped",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    },
+    {
+      "name": "battlemage",
+      "kind": "filesystem",
+      "role": "Intel Arc Pro B70 research notebook + inference harness",
+      "producer_type": "artifact_synthesis",
+      "github": null,
+      "area_path": "GAD\\battlemage",
+      "visibility": null,
+      "local_path": "D:\\work\\battlemage",
+      "summary_doc": "repos/battlemage.md",
+      "primary": false,
+      "depends_on": [],
+      "parent": null,
+      "aliases": [],
+      "surfaces": [
+        {
+          "name": "intel_ollama (single-card, IPEX-LLM fallback)",
+          "kind": "hardware-harness",
+          "deployment_url": null,
+          "lifecycle": "maintenance"
+        },
+        {
+          "name": "vulkan (dual-card, Vulkan production target)",
+          "kind": "hardware-harness",
+          "deployment_url": null,
+          "lifecycle": "active"
+        }
+      ],
+      "audience": "infra/platform that gates AI work for tempo + ember",
+      "lifecycle": "active",
+      "default_branch": "main",
+      "evidence_quote": null,
+      "markers": {},
+      "notes": null
+    }
+  ],
+  "contracts": [],
+  "data_sources": [],
+  "pipeline_tools": [
+    {
+      "name": "ollama",
+      "role": "Local LLM inference \u2014 qwen2.5:14b-instruct production, qwen2.5:32b option",
+      "install_target": "local",
+      "version_pin": null
+    },
+    {
+      "name": "llama-cpp-vulkan",
+      "role": "Dual-Arc-B70 inference \u2014 production path per battlemage/vulkan workspace",
+      "install_target": "local",
+      "version_pin": null
+    }
+  ],
+  "workflow": {
+    "branch_convention": "feature/AB<id>-<slug>",
+    "pr_auto_transition_verb": "Fixes AB#<id>",
+    "commit_ref_verb": "AB#<id>"
+  },
+  "telemetry": {
+    "otel_collector_endpoint": "http://localhost:4317",
+    "otel_protocol": "grpc",
+    "service_name_prefix": "gad-pm",
+    "sensitive_data_in_spans": false
+  },
+  "build_handoff": {
+    "bot": "ember",
+    "command": "/plan",
+    "repo": "djcdevelopment/ember"
+  },
+  "agents": [],
+  "framework_defaults_override": {}
+}

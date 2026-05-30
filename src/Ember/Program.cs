@@ -8,6 +8,7 @@ using Ember.Discord;
 using Ember.Discord.Interactions;
 using Ember.Gate;
 using Ember.Loop;
+using Ember.Manifest;
 using Ember.Models;
 using Ember.Observability;
 using Ember.Sessions;
@@ -38,6 +39,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // ── Configuration ─────────────────────────────────────────────────────────────
 builder.Services.Configure<DiscordOptions>(builder.Configuration.GetSection(DiscordOptions.Section));
 builder.Services.Configure<EmberOptions>(builder.Configuration.GetSection(EmberOptions.Section));
+builder.Services.AddSingleton<IPostConfigureOptions<EmberOptions>, EmberOptionsPostConfigure>();
 builder.Services.Configure<ModelsOptions>(builder.Configuration.GetSection(ModelsOptions.Section));
 builder.Services.Configure<OtelOptions>(builder.Configuration.GetSection(OtelOptions.Section));
 
@@ -64,6 +66,7 @@ builder.Services.AddSingleton<ISlashCommand, AbortCommand>();
 // ── Planning loop + gate ──────────────────────────────────────────────────────
 builder.Services.AddSingleton<Planner>();
 builder.Services.AddSingleton<Critic>();
+builder.Services.AddSingleton<ManifestLoader>();
 builder.Services.AddSingleton<PlanningLoopRunner>();
 
 // ── Builder ───────────────────────────────────────────────────────────────────

@@ -47,8 +47,66 @@ public sealed class EmberOptions
     /// <summary>Headless-builder settings.</summary>
     public BuilderOptions Builder { get; set; } = new();
 
-    /// <summary>Allowlisted repos: key -> absolute path on the host.</summary>
-    public Dictionary<string, string> Repos { get; set; } = new();
+    /// <summary>Constellation-manifest consumer settings (Slice B of v1.5).</summary>
+    public ManifestOptions Manifest { get; set; } = new();
+
+    /// <summary>
+    /// Allowlisted repos: key -> <see cref="RepoEntry"/>. Each entry has an absolute host path
+    /// and, optionally, the path to a constellation manifest the planner should read as round-1
+    /// context. Config parses either the legacy string shape (<c>"name": "C:\\path"</c>) or the
+    /// extended object shape (<c>"name": { "path": "C:\\path", "constellation": "C:\\..." }</c>) —
+    /// see <c>Config/EmberOptionsPostConfigure</c>.
+    /// </summary>
+    public Dictionary<string, RepoEntry> Repos { get; set; } = new();
+}
+
+/// <summary>
+/// One entry in the <see cref="EmberOptions.Repos"/> allowlist. The path is the absolute
+/// host directory ember targets for this key; the optional constellation path points the
+/// planner at the manifest framework's <c>constellation.yaml</c> for that repo. Both shapes
+/// in appsettings.json bind to this record — see <c>Config/EmberOptionsPostConfigure</c>.
+/// </summary>
+public sealed class RepoEntry
+{
+    /// <summary>Absolute host path of the target repo.</summary>
+    public string Path { get; set; } = "";
+
+    /// <summary>
+    /// Optional absolute path to a constellation manifest (e.g. <c>D:\\work\\gad\\constellation.yaml</c>)
+    /// whose validated JSON projection is folded into the round-1 planner prompt. <c>null</c> /
+    /// missing means "this repo has no constellation context" — the planner sees only the
+    /// file-system context, as before.
+    /// </summary>
+    public string? Constellation { get; set; }
+}
+
+/// <summary>
+/// How ember invokes the constellation-manifest framework to load a manifest. The framework's
+/// consumer contract (<c>MANIFEST-CONSUMER-PATTERN.md</c>) accepts both <c>framework</c> on
+/// PATH and <c>python -m constellation_manifest.cli</c>; this lets the operator pick. ember
+/// invokes <c>{Command} {ExtraArgs...} load &lt;path&gt; --json</c>.
+/// </summary>
+public sealed class ManifestOptions
+{
+    /// <summary>
+    /// Executable. Default <c>framework</c> assumes the console-script is on PATH; set this to
+    /// <c>python</c> with <see cref="ExtraArgs"/> = <c>["-m", "constellation_manifest.cli"]</c>
+    /// when the script is not on PATH.
+    /// </summary>
+    public string Command { get; set; } = "framework";
+
+    /// <summary>Args inserted between the command and the <c>load …</c> args. Useful for <c>-m</c>.</summary>
+    public List<string> ExtraArgs { get; set; } = new();
+
+    /// <summary>Kill the framework subprocess if it runs longer than this. Defaults to 30s.</summary>
+    public int TimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// The maximum manifest <c>schema_version</c> this consumer knows how to read. A newer one
+    /// is treated like any other read failure: warn and proceed without manifest context. Slice
+    /// B is built against schema_version 1; bump when the consumer is updated to a new shape.
+    /// </summary>
+    public int MaxSchemaVersion { get; set; } = 1;
 }
 
 /// <summary>Settings for the headless Claude Code builder.</summary>

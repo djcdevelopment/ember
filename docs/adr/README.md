@@ -15,3 +15,4 @@ Nygard-style (Context / Decision / Consequences).
 | [8](0008-boot-recovery-fails-closed.md) | Boot recovery fails interrupted work closed |
 | [9](0009-local-inference-on-intel-arc.md) | Local inference on the Intel Arc hardware uses vLLM, not Ollama |
 | [10](0010-rehearse-local-loop-on-nvidia.md) | Rehearse the local planning loop on the NVIDIA card before the Arc hardware |
+| [11](0011-manifest-as-planner-context.md) | Constellation manifest as round-1 planner context |

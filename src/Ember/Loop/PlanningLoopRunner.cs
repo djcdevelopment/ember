@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Ember.Config;
 using Ember.Discord;
+using Ember.Manifest;
 using Ember.Observability;
 using Ember.Sessions;
 using Microsoft.Extensions.Options;
@@ -16,6 +17,7 @@ public sealed class PlanningLoopRunner
     private readonly Critic _critic;
     private readonly SessionStore _sessions;
     private readonly ThreadGateway _threads;
+    private readonly ManifestLoader _manifest;
     private readonly EmberOptions _options;
     private readonly ILogger<PlanningLoopRunner> _logger;
 
@@ -26,6 +28,7 @@ public sealed class PlanningLoopRunner
         Critic critic,
         SessionStore sessions,
         ThreadGateway threads,
+        ManifestLoader manifest,
         IOptions<EmberOptions> options,
         ILogger<PlanningLoopRunner> logger)
     {
@@ -33,6 +36,7 @@ public sealed class PlanningLoopRunner
         _critic = critic;
         _sessions = sessions;
         _threads = threads;
+        _manifest = manifest;
         _options = options.Value;
         _logger = logger;
     }
@@ -65,8 +69,15 @@ public sealed class PlanningLoopRunner
 
         try
         {
-            var repoPath = _options.Repos.TryGetValue(session.Repo, out var path) ? path : session.Repo;
+            var entry = _options.Repos.TryGetValue(session.Repo, out var e) ? e : null;
+            var repoPath = entry?.Path ?? session.Repo;
             var repoContext = RepoContext.Gather(repoPath);
+            if (entry?.Constellation is { } constellation)
+            {
+                var summary = await _manifest.LoadSummaryAsync(constellation, session.Repo, ct);
+                if (summary is not null)
+                    repoContext = summary + "\n\n" + repoContext;
+            }
 
             await _threads.PostAsync(session.ThreadId, $"**Planning loop started** — drafting against `{session.Repo}`.");
 

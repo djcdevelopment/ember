@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Ember.Config;
 using Ember.Loop;
+using Ember.Manifest;
 using Ember.Models;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,11 +24,12 @@ public static class PlanCli
     {
         if (args.Length < 3 || string.IsNullOrWhiteSpace(args[1]) || string.IsNullOrWhiteSpace(args[2]))
         {
-            Console.Error.WriteLine("usage: dotnet run -- plan \"<brief>\" <repo>");
+            Console.Error.WriteLine("usage: dotnet run -- plan \"<brief>\" <repo> [--dry-run]");
             return 1;
         }
         var brief = args[1];
         var repoKey = args[2];
+        var dryRun = args.Skip(3).Any(a => a.Equals("--dry-run", StringComparison.OrdinalIgnoreCase));
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>
@@ -42,26 +44,30 @@ public static class PlanCli
         var builder = Host.CreateApplicationBuilder();
         builder.Services.Configure<ModelsOptions>(builder.Configuration.GetSection(ModelsOptions.Section));
         builder.Services.Configure<EmberOptions>(builder.Configuration.GetSection(EmberOptions.Section));
+        builder.Services.AddSingleton<IPostConfigureOptions<EmberOptions>, EmberOptionsPostConfigure>();
         builder.Services.AddKeyedSingleton<IChatClient>("planner", (sp, _) =>
             ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.Planner));
         builder.Services.AddKeyedSingleton<IChatClient>("critic", (sp, _) =>
             ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.Critic));
         builder.Services.AddSingleton<Planner>();
         builder.Services.AddSingleton<Critic>();
+        builder.Services.AddSingleton<ManifestLoader>();
         using var host = builder.Build();
 
         var ember = host.Services.GetRequiredService<IOptions<EmberOptions>>().Value;
         var models = host.Services.GetRequiredService<IOptions<ModelsOptions>>().Value;
 
-        if (!ember.Repos.TryGetValue(repoKey, out var repoPath))
+        if (!ember.Repos.TryGetValue(repoKey, out var entry))
         {
             var known = ember.Repos.Count == 0 ? "(none configured)" : string.Join(", ", ember.Repos.Keys);
             Console.Error.WriteLine($"Unknown repo '{repoKey}'. Allowlisted: {known}");
             return 1;
         }
+        var repoPath = entry.Path;
 
         var planner = host.Services.GetRequiredService<Planner>();
         var critic = host.Services.GetRequiredService<Critic>();
+        var manifest = host.Services.GetRequiredService<ManifestLoader>();
 
         Console.WriteLine();
         Console.WriteLine($"Planning loop — repo \"{repoKey}\"  ({repoPath})");
@@ -73,7 +79,7 @@ public static class PlanCli
 
         try
         {
-            return await RunLoopAsync(brief, repoPath, planner, critic, ember, cts.Token);
+            return await RunLoopAsync(brief, repoKey, repoPath, entry.Constellation, planner, critic, manifest, ember, dryRun, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -90,9 +96,36 @@ public static class PlanCli
     }
 
     private static async Task<int> RunLoopAsync(
-        string brief, string repoPath, Planner planner, Critic critic, EmberOptions ember, CancellationToken ct)
+        string brief, string repoKey, string repoPath, string? constellationPath,
+        Planner planner, Critic critic, ManifestLoader manifest, EmberOptions ember, bool dryRun,
+        CancellationToken ct)
     {
         var repoContext = RepoContext.Gather(repoPath);
+        if (constellationPath is not null)
+        {
+            var summary = await manifest.LoadSummaryAsync(constellationPath, repoKey, ct);
+            if (summary is not null)
+            {
+                Console.WriteLine($"  manifest:  folded {summary.Length} chars of constellation context");
+                Console.WriteLine();
+                Console.WriteLine("──── manifest summary (prepended to round-1 prompt) ────");
+                Console.WriteLine();
+                Console.WriteLine(summary);
+                Console.WriteLine();
+                repoContext = summary + "\n\n" + repoContext;
+            }
+            else
+            {
+                Console.WriteLine($"  manifest:  failed to load from {constellationPath} — see warning logs above");
+                Console.WriteLine();
+            }
+        }
+
+        if (dryRun)
+        {
+            Console.WriteLine("(--dry-run: stopping before any model calls)");
+            return 0;
+        }
 
         Console.WriteLine("round 1");
         var plan = await Step("planner drafts", () => planner.DraftAsync(brief, repoContext, ct));

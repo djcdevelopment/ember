@@ -108,7 +108,7 @@ public sealed class BuilderRunner
 
     private async Task<Outcome> ExecuteAsync(Session session, Activity? activity, CancellationToken ct)
     {
-        var repoPath = _options.Repos.TryGetValue(session.Repo, out var path) ? path : session.Repo;
+        var repoPath = _options.Repos.TryGetValue(session.Repo, out var entry) ? entry.Path : session.Repo;
         var status = new StatusMessage(_threads, session.ThreadId,
             await _threads.CreateMessageAsync(session.ThreadId, "🔨 Build starting — preparing the worktree…"));
 

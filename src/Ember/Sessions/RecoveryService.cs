@@ -157,7 +157,7 @@ public sealed class RecoveryService : IHostedService
     {
         try
         {
-            var repoPath = _options.Repos.TryGetValue(session.Repo, out var p) ? p : session.Repo;
+            var repoPath = _options.Repos.TryGetValue(session.Repo, out var entry) ? entry.Path : session.Repo;
             await Worktree.RemoveAsync(repoPath, worktreePath, CancellationToken.None);
             session.WorktreePath = null;
             _sessions.Update(session);
