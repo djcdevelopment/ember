@@ -1,9 +1,12 @@
 # ember — Implementation Plan
 
 Status: Phases 0-3 built (2026-05-15) — the full `/plan` -> draft PR pipeline.
-The planner/critic loop is being rehearsed on local models ahead of the Intel
-Arc hardware (ADR 9, ADR 10) — run end to end on Ollama via a sole-residency
-swap proxy. See `docs/local-loop-runbook.md` and the local-loop retrospective.
+The local-loop rehearsal (ADR 10) ran on the 4070 Ti via Ollama and a swap
+proxy; the Arc hardware then landed and validated llama.cpp Vulkan as the
+Windows-phase stack (ADR 12, superseding ADR 9's vLLM call). Post-v1, ember
+carries the constellation-awareness layers: knowledge-graph round-1 context
+(ADR 13) and the Reflect dual-judge recap, disabled by default (ADR 14) —
+plan of record in `D:\work\gad\pm\constellation-awareness-plan.md`.
 
 ## What ember is
 
