@@ -1,10 +1,42 @@
 # Local planning-loop runbook
 
 Running the planner and critic on local models instead of hosted Claude / GPT.
-There are two paths — **Ollama** (the current rehearsal, ADR 10) and **vLLM**
-(the Intel Arc target, ADR 9). The builder always stays hosted Claude Code.
+Three paths, in status order — **llama.cpp Vulkan** (the validated dual-Arc
+Windows target, [ADR 12](adr/0012-windows-phase-llamacpp-vulkan.md)),
+**Ollama + swap proxy** (the 4070 Ti rehearsal path, ADR 10 — still what the
+committed Development config points at), and **vLLM** (deferred to the Linux
+migration, ADR 9 / ADR 12). The builder always stays hosted Claude Code.
 
-## Ollama — the current path
+## llama.cpp Vulkan — the dual-Arc Windows path
+
+The validated Windows-phase stack
+([ADR 12](adr/0012-windows-phase-llamacpp-vulkan.md); battlemage ADR-021):
+**llama.cpp `llama-server`, release b9305 (Windows Vulkan x64 prebuilt),
+native Windows** — no WSL2, no container. One server per card, so the planner
+and critic each own a whole B70 and there is no residency contention for a
+swap proxy to mediate:
+
+- planner — `llama-server --device Vulkan0 --host 127.0.0.1 --port 8080 …`
+- critic — `llama-server --device Vulkan1 --host 127.0.0.1 --port 8081 …`
+
+Point `appsettings.Development.json` at `http://127.0.0.1:8080/v1` and
+`:8081/v1` with the matching model ids.
+
+Mind the load-bearing flags from battlemage ADR-021: on the 32 GB host,
+`--no-mmap` + direct-io keep a large GGUF load from saturating system RAM, and
+`GGML_VK_DISABLE_COOPMAT=1` defends against an Arc driver TDR. The layer-split
+variant (one 70B across both cards) additionally needs `-fit off` on
+`llama-server` — the default auto-fitter silently spills to shared GPU memory.
+The full verified recipe lives in
+`D:\World of Warcraft\Tempo\docs\adr\adr-021-dual-b70-inference-path.md`.
+
+Status: the serving stack is validated (battlemage, 2026-05-24 → 2026-06-05),
+but the loop itself has run on the dual-Arc box only against two Ollama
+servers so far — the run that hit the 32 GB system-RAM ceiling and motivates
+`llama-server` here (`RnD/07-arc-dual-card.md`). The first loop run against
+this pair is ADR 12's acceptance check.
+
+## Ollama + swap proxy — the 4070 Ti rehearsal path
 
 The loop runs on local Ollama models reached through the **swap proxy**
 (`tools/OllamaSwapProxy`). The proxy keeps exactly one model resident at a time,
@@ -41,11 +73,16 @@ and it logs every load's GPU/CPU split. See `tools/OllamaSwapProxy/README.md`.
 - **The gate auto-proceeds while you sleep** — expected. The soft gate
   (`Ember:GateCountdownSeconds`) proceeds with no human veto when unattended.
 
-## vLLM — the Intel Arc target path
+## vLLM — deferred to the Linux migration
 
-ADR 9 commits the production local loop to vLLM on two Intel Arc Pro B70s; ADR
-10 keeps the option of rehearsing the *vLLM server itself* on the host's 4070 Ti
-under WSL2. `scripts/serve-local.sh` brings up that pair.
+ADR 9 committed the production local loop to vLLM on the two Arc Pro B70s,
+assuming WSL2 would carry the Linux-only vLLM-XPU stack on Windows. That
+bridge is blocked — two upstream kernel bugs in WSL2's paravirtualization
+shim ([ADR 12](adr/0012-windows-phase-llamacpp-vulkan.md)) — so vLLM waits
+for the native-Linux migration; this section becomes current again there.
+The original procedure is kept below as written: ADR 10 kept the option of
+rehearsing the *vLLM server itself* on the host's 4070 Ti under WSL2, and
+`scripts/serve-local.sh` brings up that pair.
 
 ### One-time setup
 

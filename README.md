@@ -96,9 +96,14 @@ dotnet run --project src/Ember -- plan "add a /ping command" ember
 
 The planner and critic reach models through one OpenAI-compatible `IChatClient`
 ([ADR 3](docs/adr/0003-openai-compatible-ichatclient.md)), so pointing either at
-a local model is a config change. The Development config runs the whole loop on
-**local Ollama models** through a sole-residency swap proxy
-([`tools/OllamaSwapProxy`](tools/OllamaSwapProxy)) — the full procedure is in the
+a local model is a config change. The validated local stack is the dual Intel
+Arc Pro B70 box: **llama.cpp `llama-server` (Vulkan, native Windows), one
+endpoint per card** — no swap proxy needed
+([ADR 12](docs/adr/0012-windows-phase-llamacpp-vulkan.md)); vLLM is deferred to
+the Linux migration. The committed Development config still carries the earlier
+4070 Ti rehearsal shape — Ollama through the sole-residency swap proxy
+([`tools/OllamaSwapProxy`](tools/OllamaSwapProxy)) — until the loop's first run
+against the `llama-server` pair re-points it. Both procedures are in the
 [local-loop runbook](docs/local-loop-runbook.md). The base `appsettings.json`
 keeps the hosted planner and critic.
 
