@@ -47,6 +47,7 @@ dual-judge recap subsystem, disabled by default
 | [PLAN.md](PLAN.md) | The full design and the phased build plan |
 | [docs/architecture.md](docs/architecture.md) | Diagrams — dataflow, state machine, sequence, data contracts, telemetry |
 | [docs/local-loop-runbook.md](docs/local-loop-runbook.md) | Running the planner/critic on local models |
+| [docs/reflect-enable-runbook.md](docs/reflect-enable-runbook.md) | The operator evening — enabling the Reflect recap, phase by phase |
 | [docs/adr](docs/adr) | Architecture decision records (Nygard-style) |
 | [docs/retrospective.md](docs/retrospective.md) | Build retrospective — Phases 0–3 |
 | [docs/retrospective-local-loop.md](docs/retrospective-local-loop.md) | Local-loop rehearsal retrospective |
