@@ -84,3 +84,7 @@ The full reports carry the references and the detail behind each point.
 Beyond the research streams, the local planning loop was actually run — on
 Ollama/CUDA, four times — fixing two bottlenecks and building a tool along the
 way. See [06-ollama-rehearsal-runs.md](06-ollama-rehearsal-runs.md).
+
+The first run on the Arc hardware — 2026-06-05, dual-endpoint on the two
+B70s, and the 32 GB system-RAM ceiling it found — is backfilled as a pointer
+entry in [07-arc-dual-card.md](07-arc-dual-card.md).
