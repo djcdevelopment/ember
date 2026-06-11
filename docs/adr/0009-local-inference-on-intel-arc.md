@@ -1,6 +1,7 @@
 # 9. Local inference on the Intel Arc hardware uses vLLM, not Ollama
 
-- Status: Proposed
+- Status: Superseded for the Windows phase by
+  [ADR 12](0012-windows-phase-llamacpp-vulkan.md) (2026-06-11; was Proposed)
 - Date: 2026-05-16
 
 ## Context
@@ -46,3 +47,16 @@ build.
   not yet validated against the hardware. Revisit on first contact with the
   B70s — quantization fragility and tooling rough edges on the Arc stack are
   expected.
+
+## Update — 2026-06-11: superseded on first contact (Windows phase)
+
+The "revisit on first contact" caveat resolved against this decision. The
+dual-B70 bring-up (2026-05-21 → 2026-06-05, run through the
+`D:\work\battlemage` workspace rather than ember) found the WSL2 bridge this
+ADR leaned on is blocked by two upstream kernel bugs in WSL2's
+paravirtualization shim, while llama.cpp Vulkan on native Windows works —
+validated to a 70B-class layer-split across both cards.
+[ADR 12](0012-windows-phase-llamacpp-vulkan.md) records the Windows-phase
+decision: `llama-server` per card, vLLM deferred. The reasoning above —
+Intel's optimized path is vLLM/LLM-Scaler — was not refuted; it applies on
+native Linux and resumes at the Linux migration.

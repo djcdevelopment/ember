@@ -16,3 +16,4 @@ Nygard-style (Context / Decision / Consequences).
 | [9](0009-local-inference-on-intel-arc.md) | Local inference on the Intel Arc hardware uses vLLM, not Ollama |
 | [10](0010-rehearse-local-loop-on-nvidia.md) | Rehearse the local planning loop on the NVIDIA card before the Arc hardware |
 | [11](0011-manifest-as-planner-context.md) | Constellation manifest as round-1 planner context |
+| [12](0012-windows-phase-llamacpp-vulkan.md) | Windows-phase local inference is llama.cpp Vulkan on native Windows; vLLM defers to the Linux migration |
