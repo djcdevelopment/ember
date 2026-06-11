@@ -52,6 +52,7 @@ public static class PlanCli
         builder.Services.AddSingleton<Planner>();
         builder.Services.AddSingleton<Critic>();
         builder.Services.AddSingleton<ManifestLoader>();
+        builder.Services.AddSingleton<GraphContext>();
         using var host = builder.Build();
 
         var ember = host.Services.GetRequiredService<IOptions<EmberOptions>>().Value;
@@ -68,6 +69,7 @@ public static class PlanCli
         var planner = host.Services.GetRequiredService<Planner>();
         var critic = host.Services.GetRequiredService<Critic>();
         var manifest = host.Services.GetRequiredService<ManifestLoader>();
+        var graph = host.Services.GetRequiredService<GraphContext>();
 
         Console.WriteLine();
         Console.WriteLine($"Planning loop — repo \"{repoKey}\"  ({repoPath})");
@@ -79,7 +81,7 @@ public static class PlanCli
 
         try
         {
-            return await RunLoopAsync(brief, repoKey, repoPath, entry.Constellation, planner, critic, manifest, ember, dryRun, cts.Token);
+            return await RunLoopAsync(brief, repoKey, repoPath, entry.Constellation, planner, critic, manifest, graph, ember, dryRun, cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -97,10 +99,21 @@ public static class PlanCli
 
     private static async Task<int> RunLoopAsync(
         string brief, string repoKey, string repoPath, string? constellationPath,
-        Planner planner, Critic critic, ManifestLoader manifest, EmberOptions ember, bool dryRun,
+        Planner planner, Critic critic, ManifestLoader manifest, GraphContext graph,
+        EmberOptions ember, bool dryRun,
         CancellationToken ct)
     {
         var repoContext = RepoContext.Gather(repoPath);
+        var graphSection = await graph.GatherAsync(repoPath, brief, ct);
+        if (graphSection is not null)
+        {
+            Console.WriteLine($"  graph:     folded {graphSection.Length} chars of knowledge-graph context");
+            repoContext = graphSection + "\n\n" + repoContext;
+        }
+        else
+        {
+            Console.WriteLine("  graph:     unavailable — proceeding without graph context");
+        }
         if (constellationPath is not null)
         {
             var summary = await manifest.LoadSummaryAsync(constellationPath, repoKey, ct);

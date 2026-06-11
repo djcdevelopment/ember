@@ -50,6 +50,12 @@ public sealed class EmberOptions
     /// <summary>Constellation-manifest consumer settings (Slice B of v1.5).</summary>
     public ManifestOptions Manifest { get; set; } = new();
 
+    /// <summary>Code-knowledge-graph consumer settings (codebase-memory-mcp; ADR 13).</summary>
+    public GraphOptions Graph { get; set; } = new();
+
+    /// <summary>Reflect (dual-judge recap) settings (ADR 14).</summary>
+    public ReflectOptions Reflect { get; set; } = new();
+
     /// <summary>
     /// Allowlisted repos: key -> <see cref="RepoEntry"/>. Each entry has an absolute host path
     /// and, optionally, the path to a constellation manifest the planner should read as round-1
@@ -107,6 +113,69 @@ public sealed class ManifestOptions
     /// B is built against schema_version 1; bump when the consumer is updated to a new shape.
     /// </summary>
     public int MaxSchemaVersion { get; set; } = 1;
+}
+
+/// <summary>
+/// How ember invokes the codebase-memory-mcp CLI to read the local code knowledge graph.
+/// ember invokes <c>{Command} {ExtraArgs...} cli &lt;tool&gt; &lt;json&gt;</c>. Failures are
+/// uniformly soft — the planner/critic run without graph context, exactly like the
+/// manifest seam (ADR 13 mirrors ADR 11's posture).
+/// </summary>
+public sealed class GraphOptions
+{
+    /// <summary>Master switch. Off skips the subprocess entirely.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Executable. The npm global install ships only <c>.cmd</c>/shell shims, which
+    /// <c>Process.Start</c> cannot launch directly — point this at the real
+    /// <c>codebase-memory-mcp.exe</c> inside the npm package.
+    /// </summary>
+    public string Command { get; set; } = "codebase-memory-mcp";
+
+    /// <summary>Args inserted between the command and <c>cli &lt;tool&gt; &lt;json&gt;</c>.</summary>
+    public List<string> ExtraArgs { get; set; } = new();
+
+    /// <summary>
+    /// Value for the <c>CBM_CACHE_DIR</c> environment variable of the subprocess — where the
+    /// graph SQLite files live. Empty inherits the parent environment.
+    /// </summary>
+    public string? CacheDir { get; set; }
+
+    /// <summary>Kill the CLI subprocess if it runs longer than this. Defaults to 30s.</summary>
+    public int TimeoutSeconds { get; set; } = 30;
+
+    /// <summary>Hard cap on the graph-context section folded into the round-1 prompt.</summary>
+    public int MaxChars { get; set; } = 4000;
+}
+
+/// <summary>
+/// The Reflect subsystem: a scheduled dual-judge recap of the constellation's committed work
+/// since the last recap (ADR 14). Disabled by default — enabling it and choosing the channel
+/// is an explicit operator action.
+/// </summary>
+public sealed class ReflectOptions
+{
+    /// <summary>Master switch. Off: the hosted service idles and <c>/reflect</c> refuses.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>Channel the nightly recap threads are created in.</summary>
+    public string ChannelId { get; set; } = "";
+
+    /// <summary>Local time of day the scheduled run fires (24h <c>HH:mm</c>).</summary>
+    public string RunAtLocalTime { get; set; } = "03:00";
+
+    /// <summary>Per-repo cap on commits listed in the evidence.</summary>
+    public int MaxCommitsPerRepo { get; set; } = 20;
+
+    /// <summary>Per-repo cap on changed files listed in the evidence.</summary>
+    public int MaxFilesPerRepo { get; set; } = 40;
+
+    /// <summary>Per-repo cap on evidence characters.</summary>
+    public int MaxEvidenceCharsPerRepo { get; set; } = 3000;
+
+    /// <summary>Cap on the whole evidence bundle handed to each judge.</summary>
+    public int MaxTotalEvidenceChars { get; set; } = 16000;
 }
 
 /// <summary>Settings for the headless Claude Code builder.</summary>
@@ -185,7 +254,7 @@ public sealed class ModelOptions
     public int RequestTimeoutSeconds { get; set; } = 300;
 }
 
-/// <summary>Planner and critic model configuration.</summary>
+/// <summary>Planner, critic, and reflect-judge model configuration.</summary>
 public sealed class ModelsOptions
 {
     public const string Section = "Models";
@@ -193,6 +262,12 @@ public sealed class ModelsOptions
     public ModelOptions Planner { get; set; } = new();
 
     public ModelOptions Critic { get; set; } = new();
+
+    /// <summary>First reflect judge. Defaults target the vllama facade's planner alias.</summary>
+    public ModelOptions ReflectA { get; set; } = new();
+
+    /// <summary>Second reflect judge. Defaults target the vllama facade's critic alias.</summary>
+    public ModelOptions ReflectB { get; set; } = new();
 }
 
 /// <summary>OpenTelemetry export settings.</summary>

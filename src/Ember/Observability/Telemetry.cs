@@ -24,4 +24,8 @@ public static class Telemetry
     /// <summary>Wall-clock duration of builder runs, in seconds, tagged by outcome.</summary>
     public static readonly Histogram<double> BuildDuration =
         Meter.CreateHistogram<double>("ember.build.duration", unit: "s");
+
+    /// <summary>Counts reflect runs that reached a terminal state, tagged by outcome.</summary>
+    public static readonly Counter<long> RecapsCompleted =
+        Meter.CreateCounter<long>("ember.recaps.completed");
 }

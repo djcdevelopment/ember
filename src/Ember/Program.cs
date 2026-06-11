@@ -11,6 +11,7 @@ using Ember.Loop;
 using Ember.Manifest;
 using Ember.Models;
 using Ember.Observability;
+using Ember.Reflect;
 using Ember.Sessions;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
@@ -34,6 +35,13 @@ if (PlanCli.IsRequested(args))
     return await PlanCli.RunAsync(args);
 }
 
+// `dotnet run -- reflect [--dry-run] [--since-hours N]` runs the reflect pipeline on the
+// console and exits — no Discord, no persistence. See Cli/ReflectCli.cs.
+if (ReflectCli.IsRequested(args))
+{
+    return await ReflectCli.RunAsync(args);
+}
+
 var builder = Host.CreateApplicationBuilder(args);
 
 // ── Configuration ─────────────────────────────────────────────────────────────
@@ -46,11 +54,15 @@ builder.Services.Configure<OtelOptions>(builder.Configuration.GetSection(OtelOpt
 // ── Sessions ──────────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<SessionStore>();
 
-// ── Chat clients (planner = Claude, critic = GPT) ─────────────────────────────
+// ── Chat clients (planner = Claude, critic = GPT, reflect judges = local) ─────
 builder.Services.AddKeyedSingleton<IChatClient>("planner", (sp, _) =>
     ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.Planner));
 builder.Services.AddKeyedSingleton<IChatClient>("critic", (sp, _) =>
     ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.Critic));
+builder.Services.AddKeyedSingleton<IChatClient>("reflectA", (sp, _) =>
+    ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.ReflectA));
+builder.Services.AddKeyedSingleton<IChatClient>("reflectB", (sp, _) =>
+    ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.ReflectB));
 
 // ── Discord ───────────────────────────────────────────────────────────────────
 builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
@@ -62,12 +74,21 @@ builder.Services.AddSingleton<ThreadGateway>();
 builder.Services.AddSingleton<ISlashCommand, PlanCommand>();
 builder.Services.AddSingleton<ISlashCommand, StatusCommand>();
 builder.Services.AddSingleton<ISlashCommand, AbortCommand>();
+builder.Services.AddSingleton<ISlashCommand, ReflectCommand>();
 
 // ── Planning loop + gate ──────────────────────────────────────────────────────
 builder.Services.AddSingleton<Planner>();
 builder.Services.AddSingleton<Critic>();
 builder.Services.AddSingleton<ManifestLoader>();
+builder.Services.AddSingleton<GraphContext>();
 builder.Services.AddSingleton<PlanningLoopRunner>();
+
+// ── Reflect (dual-judge recap) ────────────────────────────────────────────────
+builder.Services.AddSingleton<RecapStore>();
+builder.Services.AddSingleton<EvidenceAssembler>();
+builder.Services.AddSingleton<DivergenceComparer>();
+builder.Services.AddSingleton<ReflectRunner>();
+builder.Services.AddSingleton<ReflectExecutor>();
 
 // ── Builder ───────────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<PullRequest>();
@@ -79,6 +100,7 @@ builder.Services.AddSingleton<BuildQueue>();
 builder.Services.AddHostedService<RecoveryService>();
 builder.Services.AddHostedService<DiscordBotService>();
 builder.Services.AddHostedService<GateService>();
+builder.Services.AddHostedService<ReflectService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BuildQueue>());
 
 // ── OpenTelemetry ─────────────────────────────────────────────────────────────
@@ -104,6 +126,7 @@ var host = builder.Build();
 
 // Create the SQLite schema before the bot accepts commands.
 host.Services.GetRequiredService<SessionStore>().Initialize();
+host.Services.GetRequiredService<RecapStore>().Initialize();
 
 host.Run();
 return 0;

@@ -33,7 +33,12 @@ Personal dev tool, single operator — not a product.
 | 3 | PR handoff and hardening | Built |
 
 Beyond the four phases, the planner/critic loop is being rehearsed on local
-models — see the [local-loop retrospective](docs/retrospective-local-loop.md).
+models — see the [local-loop retrospective](docs/retrospective-local-loop.md) —
+and ember carries the first two ember-side layers of the constellation-awareness
+plan (`D:\work\gad\pm\constellation-awareness-plan.md`): round-1 context from the
+code knowledge graph ([ADR 13](docs/adr/0013-graph-context.md)) and the Reflect
+dual-judge recap subsystem, disabled by default
+([ADR 14](docs/adr/0014-reflect-dual-judge-recap.md)).
 
 ## Documentation
 
@@ -142,8 +147,32 @@ exports to the shared Jaeger collector (portmap project `tempo`, OTLP `:4317`).
 | `/plan <brief> <repo>` | Opens a thread and starts the planning loop |
 | `/status` | Reports the session state for the current thread |
 | `/abort` | Cancels the session — loop, gate, or build |
+| `/reflect` | Runs the constellation recap now (requires Reflect enabled) |
 
-All three are locked to the configured owner.
+All commands are locked to the configured owner.
+
+## Reflect
+
+A scheduled (default 03:00 local) dual-judge recap of the constellation's
+committed work since the last recap: git supplies each repo's delta, the code
+knowledge graph enriches it with the symbols behind the changed files, two
+local models on the vllama facade write independent recaps, and a structured
+comparison surfaces their divergences. The recap posts as a `reflect:` thread;
+reacting ✅ / ✏️ / ❌ on it persists your verdict — the label corpus the later
+adaptation loop trains against. See [ADR 14](docs/adr/0014-reflect-dual-judge-recap.md).
+
+**Disabled by default.** To enable: set `Ember:Reflect:Enabled` to `true` and
+`Ember:Reflect:ChannelId` to the target channel. The pipeline never launches a
+model server — if the vllama endpoints are down, the run fails soft and the
+night re-reports tomorrow.
+
+Validate the pipeline read-only from the console — no Discord, no database,
+baseline resolved from git:
+
+```
+dotnet run --project src/Ember -- reflect --dry-run --since-hours 48
+dotnet run --project src/Ember -- reflect                # judges too, if endpoints are up
+```
 
 ## Project layout
 
@@ -154,11 +183,13 @@ src/Ember/
   Config/Options.cs             strongly-typed options
   Sessions/                     Session model + SQLite SessionStore
   Discord/                      bot service, slash commands, thread helpers
-  Loop/                         Planner, Critic, CriticVerdict, PlanningLoopRunner, RepoContext
+  Loop/                         Planner, Critic, PlanningLoopRunner, RepoContext, GraphContext
   Gate/GateService.cs           the resumable soft-gate poller
   Build/                        Worktree, PlanArtifact, BuilderRunner, BuildQueue, PullRequest
+  Reflect/                      dual-judge recap — evidence, judges, comparer, scheduler, store
   Sessions/RecoveryService.cs   boot recovery for interrupted sessions
   Cli/PlanCli.cs                console planning-loop runner (dotnet run -- plan)
+  Cli/ReflectCli.cs             console reflect runner (dotnet run -- reflect)
   Demo/TraceDemo.cs             synthetic OTel trace demo (dotnet run -- demo)
   Models/ChatClientFactory.cs   IChatClient builder
   Observability/Telemetry.cs    ActivitySource + Meter

@@ -17,3 +17,5 @@ Nygard-style (Context / Decision / Consequences).
 | [10](0010-rehearse-local-loop-on-nvidia.md) | Rehearse the local planning loop on the NVIDIA card before the Arc hardware |
 | [11](0011-manifest-as-planner-context.md) | Constellation manifest as round-1 planner context |
 | [12](0012-windows-phase-llamacpp-vulkan.md) | Windows-phase local inference is llama.cpp Vulkan on native Windows; vLLM defers to the Linux migration |
+| [13](0013-graph-context.md) | Code knowledge graph (codebase-memory-mcp CLI) as planner/critic context |
+| [14](0014-reflect-dual-judge-recap.md) | Reflect: a scheduled dual-judge recap on the local cards, reactions as labels |

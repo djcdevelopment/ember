@@ -18,6 +18,7 @@ public sealed class PlanningLoopRunner
     private readonly SessionStore _sessions;
     private readonly ThreadGateway _threads;
     private readonly ManifestLoader _manifest;
+    private readonly GraphContext _graph;
     private readonly EmberOptions _options;
     private readonly ILogger<PlanningLoopRunner> _logger;
 
@@ -29,6 +30,7 @@ public sealed class PlanningLoopRunner
         SessionStore sessions,
         ThreadGateway threads,
         ManifestLoader manifest,
+        GraphContext graph,
         IOptions<EmberOptions> options,
         ILogger<PlanningLoopRunner> logger)
     {
@@ -37,6 +39,7 @@ public sealed class PlanningLoopRunner
         _sessions = sessions;
         _threads = threads;
         _manifest = manifest;
+        _graph = graph;
         _options = options.Value;
         _logger = logger;
     }
@@ -72,6 +75,9 @@ public sealed class PlanningLoopRunner
             var entry = _options.Repos.TryGetValue(session.Repo, out var e) ? e : null;
             var repoPath = entry?.Path ?? session.Repo;
             var repoContext = RepoContext.Gather(repoPath);
+            var graph = await _graph.GatherAsync(repoPath, session.Brief, ct);
+            if (graph is not null)
+                repoContext = graph + "\n\n" + repoContext;
             if (entry?.Constellation is { } constellation)
             {
                 var summary = await _manifest.LoadSummaryAsync(constellation, session.Repo, ct);

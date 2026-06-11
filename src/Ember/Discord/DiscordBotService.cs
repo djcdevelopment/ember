@@ -4,6 +4,7 @@ using Discord;
 using Discord.WebSocket;
 using Ember.Config;
 using Ember.Observability;
+using Ember.Reflect;
 using Ember.Sessions;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +22,7 @@ public sealed class DiscordBotService : BackgroundService
     private readonly DiscordSocketClient _client;
     private readonly IReadOnlyDictionary<string, ISlashCommand> _commands;
     private readonly SessionStore _sessions;
+    private readonly RecapStore _recaps;
     private readonly ThreadGateway _threads;
     private readonly DiscordOptions _options;
     private readonly IHostApplicationLifetime _lifetime;
@@ -34,6 +36,7 @@ public sealed class DiscordBotService : BackgroundService
         DiscordSocketClient client,
         IEnumerable<ISlashCommand> commands,
         SessionStore sessions,
+        RecapStore recaps,
         ThreadGateway threads,
         IOptions<DiscordOptions> options,
         IHostApplicationLifetime lifetime,
@@ -42,6 +45,7 @@ public sealed class DiscordBotService : BackgroundService
         _client = client;
         _commands = commands.ToDictionary(c => c.Name);
         _sessions = sessions;
+        _recaps = recaps;
         _threads = threads;
         _options = options.Value;
         _lifetime = lifetime;
@@ -183,18 +187,38 @@ public sealed class DiscordBotService : BackgroundService
         Cacheable<IMessageChannel, ulong> channel,
         SocketReaction reaction)
     {
-        if (reaction.UserId != _ownerId || reaction.Emote.Name != AbortEmoji)
+        if (reaction.UserId != _ownerId)
             return;
 
-        var session = _sessions.Get(channel.Id.ToString());
-        if (session is null || session.State != SessionState.AwaitingGate)
+        if (reaction.Emote.Name == AbortEmoji)
+        {
+            var session = _sessions.Get(channel.Id.ToString());
+            if (session is null || session.State != SessionState.AwaitingGate)
+                return;
+
+            session.State = SessionState.Aborted;
+            _sessions.Update(session);
+            await _threads.PostAsync(session.ThreadId,
+                "**Aborted at the gate** — 🛑 received. The plan will not proceed.");
+            _logger.LogInformation("Session {ThreadId} aborted via gate reaction.", session.ThreadId);
+            return;
+        }
+
+        // Recap labels — the operator's verdict on a reflect post, keyed by the
+        // label-request message id. Trim the emoji variation selector (U+FE0F) so
+        // ✏️ matches however the client reports it.
+        var label = reaction.Emote.Name.TrimEnd('️') switch
+        {
+            "✅" => RecapLabels.Accurate,
+            "✏" => RecapLabels.Partial,
+            "❌" => RecapLabels.Wrong,
+            _ => null,
+        };
+        if (label is null)
             return;
 
-        session.State = SessionState.Aborted;
-        _sessions.Update(session);
-        await _threads.PostAsync(session.ThreadId,
-            "**Aborted at the gate** — 🛑 received. The plan will not proceed.");
-        _logger.LogInformation("Session {ThreadId} aborted via gate reaction.", session.ThreadId);
+        if (_recaps.SetLabel(message.Id.ToString(), label))
+            _logger.LogInformation("Recap labelled '{Label}' via reaction on message {MessageId}.", label, message.Id);
     }
 
     private static async Task RespondWithErrorAsync(SocketSlashCommand command)
