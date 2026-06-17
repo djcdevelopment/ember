@@ -24,9 +24,12 @@ $ErrorActionPreference = 'Stop'
 $Vllama       = 'D:\work\vllama\src\Vllama\bin\Release\net9.0\vllama.exe'
 $FacadePort   = 8090
 $Judges       = @(
-    @{ Model = 'qwen3-30b-a3b-128k'; Slot = $null   },   # vllama-planner (slot-a default; dual-split)
-    @{ Model = 'qwen2.5-14b-q4';     Slot = 'slot-b' }    # vllama-critic  (MUST pin --slot slot-b, else
-)                                                         # it defaults to slot-a/8080 and collides)
+    # Pin BOTH judges to the slot their facade alias routes to. A slot-less load registers under
+    # the model-name key, but the facade resolves alias -> slot key; that mismatch silently 503'd
+    # the planner on 2026-06-17 (it was resident+healthy but unroutable). See vllama ADR-0007.
+    @{ Model = 'qwen3-30b-a3b-128k'; Slot = 'slot-a'; Alias = 'vllama-planner' },  # dual-split across 0,1
+    @{ Model = 'qwen2.5-14b-q4';     Slot = 'slot-b'; Alias = 'vllama-critic'  }   # single card 1
+)
 $EmberProject = 'D:\work\ember\src\Ember'
 $TriggerPort  = 8091
 $TriggerBase  = "http://127.0.0.1:$TriggerPort"
@@ -112,6 +115,19 @@ foreach ($j in $Judges) {
     $status = Get-VllamaStatus
     if (Test-Resident $status $m) { Ok "$m up" } else { Die "$m still not healthy after ``up``." }
 }
+
+# --- 2b. serve-level readiness gate (vllama ADR-0007) ------------------------
+# "Resident" above is process-level (vllama status, keyed by model). The constraint that
+# actually bit us on 2026-06-17 is whether each alias can be ROUTED and SERVED through the
+# facade. Prove it now -- a real probe generation per alias -- before triggering a recap that
+# would otherwise degrade to a single perspective on a 503.
+Say '      verifying judges can serve through the facade (`vllama ready`) ...'
+$readyJson = (& $Vllama ready | Out-String).Trim()
+if ($LASTEXITCODE -ne 0) {
+    if ($readyJson) { Write-Host $readyJson -ForegroundColor DarkGray }
+    Die "a judge alias cannot serve through the facade (``vllama ready`` exit $LASTEXITCODE). Refusing up front rather than firing a recap into a 503 -- see the per-alias reason/remedy above."
+}
+Ok 'both judges serve through the facade'
 
 # --- 3. ember bot + trigger --------------------------------------------------
 Say "`n[3/5] ember bot (trigger on :$TriggerPort)"
