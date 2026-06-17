@@ -38,6 +38,14 @@ public sealed class ReflectService : BackgroundService
             return;
         }
 
+        if (ScheduleDisabled(_options.Reflect.ScheduleEnabled, _options.Reflect.RunAtLocalTime))
+        {
+            _logger.LogInformation(
+                "Reflect schedule disabled (Ember:Reflect:ScheduleEnabled=false); manual-only — "
+                + "use /reflect or the desktop launcher. The nightly auto-run will not fire.");
+            return;
+        }
+
         if (!TimeOnly.TryParse(_options.Reflect.RunAtLocalTime, out var runAt))
         {
             _logger.LogWarning(
@@ -77,6 +85,16 @@ public sealed class ReflectService : BackgroundService
             }
         }
     }
+
+    /// <summary>
+    /// Whether the scheduler stays idle. Manual-only (<c>ScheduleEnabled=false</c>) or a
+    /// blank/whitespace run time both mean "no nightly auto-run": Reflect stays enabled for the
+    /// manual <c>/reflect</c> command and the launcher trigger, but nothing fires unattended. On
+    /// this single-operator rig the operator brings the inference substrate up deliberately
+    /// (ADR 17), so an unattended 03:00 run that competes for the GPUs is opt-in, not default.
+    /// </summary>
+    public static bool ScheduleDisabled(bool scheduleEnabled, string? runAtLocalTime) =>
+        !scheduleEnabled || string.IsNullOrWhiteSpace(runAtLocalTime);
 
     /// <summary>
     /// Due when the local clock has passed today's run time and no run (any status) has

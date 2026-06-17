@@ -43,4 +43,20 @@ public class ReflectScheduleTests
         var now = new DateTime(2026, 6, 11, 14, 30, 0);
         Assert.True(ReflectService.IsDue(now, RunAt, latestRunDate: "2026-06-10"));
     }
+
+    [Fact]
+    public void Schedule_is_disabled_in_manual_only_mode_or_with_a_blank_time()
+    {
+        // Manual-only (ADR 17): ScheduleEnabled=false, or a blank / whitespace / null run time.
+        Assert.True(ReflectService.ScheduleDisabled(scheduleEnabled: false, "03:00"));
+        Assert.True(ReflectService.ScheduleDisabled(scheduleEnabled: true, ""));
+        Assert.True(ReflectService.ScheduleDisabled(scheduleEnabled: true, "   "));
+        Assert.True(ReflectService.ScheduleDisabled(scheduleEnabled: true, null));
+    }
+
+    [Fact]
+    public void Schedule_stays_on_when_enabled_with_a_run_time()
+    {
+        Assert.False(ReflectService.ScheduleDisabled(scheduleEnabled: true, "03:00"));
+    }
 }

@@ -102,6 +102,7 @@ builder.Services.AddHostedService<RecoveryService>();
 builder.Services.AddHostedService<DiscordBotService>();
 builder.Services.AddHostedService<GateService>();
 builder.Services.AddHostedService<ReflectService>();
+builder.Services.AddHostedService<ReflectTriggerService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BuildQueue>());
 
 // ── OpenTelemetry ─────────────────────────────────────────────────────────────

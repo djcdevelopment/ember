@@ -170,7 +170,15 @@ public sealed class ReflectOptions
     /// <summary>Channel the nightly recap threads are created in.</summary>
     public string ChannelId { get; set; } = "";
 
-    /// <summary>Local time of day the scheduled run fires (24h <c>HH:mm</c>).</summary>
+    /// <summary>
+    /// Whether the nightly auto-run fires. True (default) runs at <see cref="RunAtLocalTime"/>;
+    /// false is "manual-only" — Reflect stays enabled for <c>/reflect</c> and the launcher
+    /// trigger, but nothing fires unattended (ADR 17). On a single-operator rig that also games
+    /// and streams on the same GPUs, an unattended 03:00 run is opt-in, not default.
+    /// </summary>
+    public bool ScheduleEnabled { get; set; } = true;
+
+    /// <summary>Local time of day the scheduled run fires (24h <c>HH:mm</c>), when <see cref="ScheduleEnabled"/>.</summary>
     public string RunAtLocalTime { get; set; } = "03:00";
 
     /// <summary>Per-repo cap on commits listed in the evidence.</summary>
@@ -197,6 +205,14 @@ public sealed class ReflectOptions
     /// default — observe the written files first, then enable for the unattended cron run.
     /// </summary>
     public bool CommitArtifacts { get; set; }
+
+    /// <summary>
+    /// Port for the loopback-only "run now" trigger (127.0.0.1) the desktop launcher pokes to
+    /// start a recap without Discord (ADR 17). 0 disables the listener (default), matching
+    /// Reflect's disabled-by-default posture; set a free port (e.g. 8091) to enable. The run it
+    /// starts is identical to <c>/reflect</c> and is still gated by <see cref="Enabled"/>.
+    /// </summary>
+    public int LocalTriggerPort { get; set; }
 }
 
 /// <summary>Settings for the headless Claude Code builder.</summary>
