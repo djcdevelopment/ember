@@ -67,7 +67,7 @@ builder.Services.AddKeyedSingleton<IChatClient>("reflectB", (sp, _) =>
 // ── Discord ───────────────────────────────────────────────────────────────────
 builder.Services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
 {
-    GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent,
+    GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent | GatewayIntents.GuildMessageReactions,
     LogLevel = LogSeverity.Info,
 }));
 builder.Services.AddSingleton<ThreadGateway>();
