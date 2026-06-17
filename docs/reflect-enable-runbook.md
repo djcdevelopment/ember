@@ -32,15 +32,21 @@ cd D:\work\vllama\src\Vllama
 $v = '.\bin\Release\net9.0\vllama.exe'        # dotnet build -c Release first if missing
 
 & $v status                                    # see what's already resident
-& $v up --model qwen3-30b-a3b-128k             # judge A backing (vllama-planner, dual-split)
-& $v up --model qwen2.5-14b-q4                 # judge B backing (vllama-critic, card 1)
+& $v up --model qwen3-30b-a3b-128k             # judge A backing (vllama-planner, dual: spans both cards)
+& $v up --model qwen2.5-14b-q4 --slot slot-b   # judge B backing (vllama-critic) — --slot is required, see note
 & $v serve                                     # the OpenAI facade on 127.0.0.1:8090 — stays in foreground
 ```
 
 Notes:
+- **`--slot slot-b` is required on the second `up`.** `up` with no `--slot` defaults to
+  slot-a / port 8080, which the first model already holds — so the critic collides on the
+  port without it. (Confirmed the hard way 2026-06-17.)
 - `up` runs the full safety chain itself (preflight → launch → /health → warmup →
   gate → register). The 22 GB host-RAM floor is enforced for you — if it refuses,
-  believe it and free RAM first.
+  believe it and free RAM first. Caveat the floor does *not* catch: `--no-mmap` stages a
+  model's full file through system RAM during load (a 17 GB model ≈ a 17 GB transient spike
+  before it lands in VRAM), so load from a low RAM base and one at a time on 32 GB. Do not
+  stage the 70B this way until the 64 GB upgrade (#99).
 - Keep this terminal open. `serve` in the foreground IS the facade.
 
 **Checkpoint** (second terminal):
@@ -125,6 +131,14 @@ When the thread appears: read both recaps, then **react on the label message** �
 that's the evaluator corpus accruing. Anything you type in the thread is kept as
 correction context.
 
+Each real recap also writes a markdown artifact to `Ember:Reflect:JournalDir`
+(`D:\work\gad\pm\journal\reflect\<date>.md`) — the git trail (ADR 15). Committing it is
+gated by `Ember:Reflect:CommitArtifacts`, **off by default**: the file is written but not
+committed until you flip that on for the unattended cron run. Note too that a real run now
+**re-indexes each changed repo before reading its symbols** (ADR 15), so the first seconds
+of a run are reindex latency (a large repo like b70tools can take ~15 s) — expected, not a
+hang.
+
 This night starts the **seven-night R2 gate** from the constellation-awareness plan.
 
 ---
@@ -135,7 +149,8 @@ This night starts the **seven-night R2 gate** from the constellation-awareness p
 |---|---|
 | `/reflect` replies "Reflect is disabled" | Secrets not set, or bot started before they were — set them, restart the bot. |
 | Judges fail with 503 | Alias's model not resident — `vllama status`, re-`up` the missing model, keep `serve` running. |
-| `Reflect channel ... not found` in log | ChannelId wrong or bot lacks access — re-copy the id, check channel permissions. |
+| `Reflect channel ... not found` / `not a text channel` in log | ChannelId wrong, points at a voice channel, or bot lacks access — re-copy the id of the `#reflect` **text** channel. (Only surfaces on a real recap; the baseline run never posts.) |
+| critic `up` fails `port 8080 already open` | You omitted `--slot slot-b` on the second `up` — it defaulted to slot-a's port. Add it. |
 | A night fails entirely | By design it claims the day and does **not** advance baselines — tomorrow re-reports the same delta. `/reflect` is the manual retry. |
 | Host RAM pressure | Don't run Ollama alongside the vllama pair on 32 GB; the lean llama.cpp path is the point until Workstation #99 (64 GB) lands. |
 | Recap quality is rough | Expected at first — that's what the seven nights and your labels measure. Judge models are config (`Models:ReflectA/B`), upgradeable after battlemage Q2 without code. |
