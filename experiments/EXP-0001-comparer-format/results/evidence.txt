@@ -1,0 +1,171 @@
+# Evidence — 2026-06-16
+4 repo(s) with changes, 6 quiet.
+
+### b70tools — 1 commit(s), 9 file(s)  (3c23995..9c60bff)
+Commits:
+- 9c60bff retro: overnight-regression-harness — docs, README, retro
+Files:
+- README.md
+- docs/inference-test-backlog.md
+- docs/overnight-regression-plan-2026-06-16.md
+- docs/retrospective-wow-realtime-inference-impact-overnight-2026-06-16.md
+- docs/wow-realtime-inference-impact-plan.md
+- scripts/overnight-regression/Invoke-LeopardArtifactSweep.ps1
+- scripts/overnight-regression/Run-OvernightAll.ps1
+- scripts/overnight-regression/Start-ParserRegressionSweep.ps1
+- scripts/tooling/Start-AlwaysHotMoE.ps1
+Symbols touched (from the code graph):
+- README.md — Module — README.md
+- docs/wow-realtime-inference-impact-plan.md — Module — docs/wow-realtime-inference-impact-plan.md
+- eval/README.md — Module — eval/README.md
+- scripts/wow-impact/README.md — Module — scripts/wow-impact/README.md
+- third_party/Vulkan-Headers/README.md — Module — third_party/Vulkan-Headers/README.md
+- third_party/igcl/README.md — Module — third_party/igcl/README.md
+- third_party/igcl/Samples/3D_Feature_Samples/README.md — Module — third_party/igcl/Samples/3D_Feature_Samples/README.md
+- third_party/igcl/Samples/Color_Samples/README.md — Module — third_party/igcl/Samples/Color_Samples/README.md
+- third_party/igcl/Samples/CombinedDisplay/README.md — Module — third_party/igcl/Samples/CombinedDisplay/README.md
+- third_party/igcl/Samples/Custom_Mode_Samples/README.md — Module — third_party/igcl/Samples/Custom_Mode_Samples/README.md
+- third_party/igcl/Samples/DisplayQuantization_Sample/README.md — Module — third_party/igcl/Samples/DisplayQuantization_Sample/README.md
+- third_party/igcl/Samples/DisplaySettings/README.md — Module — third_party/igcl/Samples/DisplaySettings/README.md
+- third_party/igcl/Samples/Edid_Management_Sample/README.md — Module — third_party/igcl/Samples/Edid_Management_Sample/README.md
+- third_party/igcl/Samples/FirmwareApi/README.md — Module — third_party/igcl/Samples/FirmwareApi/README.md
+- third_party/igcl/Samples/I2C_AUX_Samples/README.md — Module — third_party/igcl/Samples/I2C_AUX_Samples/README.md
+
+### ember — 7 commit(s), 35 file(s)  (fa8a603..93ef3a4)
+Commits:
+- 93ef3a4 docs: the Reflect enable runbook - the operator evening, phase by phase
+- f3c3c20 docs: PLAN.md status header catches up to ADR 12 reality and the post-v1 layers
+- d653498 Constellation awareness R1+R2: graph context and the Reflect dual-judge recap
+- e196cb5 Point the operating docs at the validated Windows-phase local stack
+- a69e840 Backfill RnD/07: first planner/critic run on the Arc dual-card box
+- ca3c2c2 Commit the Arc bring-up plan as a record, marked overtaken by events
+- 9d299e4 Supersede ADR 9 for the Windows phase: llama.cpp Vulkan, not vLLM
+Files:
+- PLAN.md
+- README.md
+- RnD/07-arc-dual-card.md
+- RnD/README.md
+- docs/adr/0009-local-inference-on-intel-arc.md
+- docs/adr/0012-windows-phase-llamacpp-vulkan.md
+- docs/adr/0013-graph-context.md
+- docs/adr/0014-reflect-dual-judge-recap.md
+- docs/adr/README.md
+- docs/local-loop-arc-bringup.md
+- docs/local-loop-runbook.md
+- docs/reflect-enable-runbook.md
+- src/Ember/Cli/PlanCli.cs
+- src/Ember/Cli/ReflectCli.cs
+- src/Ember/Config/Options.cs
+- src/Ember/Discord/DiscordBotService.cs
+- src/Ember/Discord/Interactions/ReflectCommand.cs
+- src/Ember/Loop/GraphContext.cs
+- src/Ember/Loop/PlanningLoopRunner.cs
+- src/Ember/Observability/Telemetry.cs
+- src/Ember/Program.cs
+- src/Ember/Reflect/DivergenceComparer.cs
+- src/Ember/Reflect/EvidenceAssembler.cs
+- src/Ember/Reflect/Recap.cs
+- src/Ember/Reflect/RecapJudge.cs
+- src/Ember/Reflect/RecapStore.cs
+- src/Ember/Reflect/ReflectExecutor.cs
+- src/Ember/Reflect/ReflectRunner.cs
+- src/Ember/Reflect/ReflectService.cs
+- src/Ember/appsettings.json
+- tests/Ember.Tests/DivergenceComparerTests.cs
+- tests/Ember.Tests/EvidenceAssemblerTests.cs
+- tests/Ember.Tests/GraphContextTests.cs
+- tests/Ember.Tests/RecapStoreTests.cs
+- tests/Ember.Tests/ReflectScheduleTests.cs
+Symbols touched (from the code graph):
+- EmitPlanningTrace — Method — src/Ember/Demo/TraceDemo.cs
+- MaxPlanRounds — Variable — src/Ember/appsettings.json
+- MaxPlanRounds — Field — src/Ember/Config/Options.cs
+- MaxReadmeChars — Field — src/Ember/Loop/RepoContext.cs
+- MaxReadmeChars — Variable — src/Ember/Loop/RepoContext.cs
+- PLAN.md — Module — PLAN.md
+- PLANNER_MODEL — Variable — scripts/serve-local.sh
+- PlanArtifact — Class — src/Ember/Build/PlanArtifact.cs
+- PlanCli — Class — src/Ember/Cli/PlanCli.cs
+- PlanCommand — Class — src/Ember/Discord/Interactions/PlanCommand.cs
+- PlanCommand — Method — src/Ember/Discord/Interactions/PlanCommand.cs
+- PlanSnapshot — Field — src/Ember/Sessions/Session.cs
+- Planner — Variable — src/Ember/appsettings.json
+- Planner — Field — src/Ember/Config/Options.cs
+- Planner — Class — src/Ember/Loop/Planner.cs
+
+### leopard — 16 commit(s), 52 file(s)  (332843d..3d4999f)
+Commits:
+- 3d4999f feat: the trend lens + the property catalog - Ask's last markdown zoom composes, palettes derive from one registry (ADR-0011)
+- 6821576 retro: b70-first-light-and-the-overtime-axis - docs, ADRs, README, retro
+- fec78da feat: the over-time slices - Reconciled encounter + Trend window light up
+- b0234f8 fix: chat errors surface the provider message, not just the HTTP status
+- db0ba32 fix: provider detection retries while absent - no more restart-to-detect
+- 58823f9 feat: the night lens - Ask's default zoom becomes a property composer
+- 90e5bf8 feat: configurable Ask provider (ollama|openai) - the 11434 hardcode retired
+- a6448ae retro: explorer-phase-2-ghosts-live - docs, ADRs, README, retro
+- d267c39 feat: Explorer phase 2 - the ghosts light up (five registry flips, three new endpoints)
+- 58d1fe3 test: buildCareerLens vitest suite — the five-retro debt, paid
+- 5b05a77 retro: explorer-knowledge-ide — docs, ADRs, README, retro
+- 0ecba13 feat: Explorer — the knowledge-library IDE (phase 1: four live RaidUI-port objects)
+- f5d919b retro: amend — discoverlay insight panel shipped same evening (5614536), not future work
+- 48bcc78 retro: live-marathon-and-math-port — docs, ADRs, README, retro
+- 5d95900 Merge pull request #1 from djcdevelopment/inventory-canonical-context
+- eabbba8 docs: property inventory disk-confirmed — all four Windows-side checks closed
+Files:
+- README.md
+- dev-up.ps1
+- docs/adr/0005-raidui-math-ports-live-in-leopard-host.md
+- docs/adr/0006-live-loop-division-and-jsonl-bridge.md
+- docs/adr/0007-explorer-slice-contracts-compile-client-side.md
+- docs/adr/0008-host-serves-ui-from-exe-relative-wwwroot.md
+- docs/adr/0009-artifact-caches-downsample-frames-stay-in-process.md
+- docs/adr/0010-ask-provider-is-a-config-entry-behind-llm-route.md
+- docs/adr/0011-property-catalog-single-source-palettes-derive.md
+- docs/catalog-selection-ux-plan.md
+- docs/feature-order.md
+- docs/property-inventory.md
+- docs/provider-contract.md
+- docs/wow-season-boundaries.md
+- retros/b70-first-light-and-the-overtime-axis-2026-06-11.md
+- retros/explorer-knowledge-ide-2026-06-11.md
+- retros/explorer-phase-2-ghosts-live-2026-06-11.md
+- retros/live-marathon-and-math-port-2026-06-10.md
+- retros/trend-lens-and-property-catalog-2026-06-16.md
+- src/leopard-host.Tests/CoverageTimelineTests.cs
+- src/leopard-host.Tests/NightArtifactTests.cs
+- src/leopard-host/BoxScore.cs
+- src/leopard-host/ClassifyArtifact.cs
+- src/leopard-host/CoverageTimeline.cs
+- src/leopard-host/FormationSegments.cs
+- src/leopard-host/Program.cs
+- src/leopard-host/leopard-host.csproj
+- src/leopard-web/src/App.jsx
+- src/leopard-web/src/AskPanel.jsx
+- src/leopard-web/src/ExplorerEditor.jsx
+- src/leopard-web/src/ExplorerOutput.jsx
+- src/leopard-web/src/ExplorerPreviews.jsx
+- src/leopard-web/src/ExplorerProperties.jsx
+- src/leopard-web/src/ExplorerTab.jsx
+- src/leopard-web/src/Ex
+...(repo evidence truncated)
+
+### vllama — 1 commit(s), 5 file(s)  (9a37827..de76d76)
+Commits:
+- de76d76 vllama: resident-aware host-pressure preflight (ADR-0006)
+Files:
+- README.md
+- docs/adr/0006-resident-aware-host-pressure.md
+- src/Vllama/Lifecycle/ProcessUtil.cs
+- src/Vllama/Lifecycle/SlotManager.cs
+- src/Vllama/Program.cs
+Symbols touched (from the code graph):
+- ProcessUtil — Class — src/Vllama/Lifecycle/ProcessUtil.cs
+- README.md — Module — README.md
+- SlotManager — Class — src/Vllama/Lifecycle/SlotManager.cs
+- SlotManager — Method — src/Vllama/Lifecycle/SlotManager.cs
+- docs/adr/0006-resident-aware-host-pressure.md — Module — docs/adr/0006-resident-aware-host-pressure.md
+- src/Vllama/Lifecycle/ProcessUtil.cs — Module — src/Vllama/Lifecycle/ProcessUtil.cs
+- src/Vllama/Lifecycle/SlotManager.cs — Module — src/Vllama/Lifecycle/SlotManager.cs
+- src/Vllama/Program.cs — Module — src/Vllama/Program.cs
+
+Quiet: campfire (no changes), discoverlay (no changes), hearth (no changes), lantern (no changes), raidui (no changes), tempo (no changes)

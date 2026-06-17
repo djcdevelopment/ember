@@ -1,0 +1,29 @@
+{
+ "agreements": ["vllama implemented resident-aware host-pressure preflight mechanism", "leopard completed Explorer Phase 2 and implemented configurable Ask provider"],
+ "divergences": [
+  {
+   "topic": "b70tools regression scripts",
+   "kind": "contradiction",
+   "aSays": "Updated scripts for automated regression sweeps, particularly `Invoke-LeopardArtifactSweep.ps1` and `Start-ParserRegressionSweep.ps1`",
+   "bSays": "Updated documentation for the overnight regression harness, including README, plan, and retrospective files"
+  },
+  {
+   "topic": "leopard's documentation",
+   "kind": "contradiction",
+   "aSays": "leopard’s `retros/trend-lens-and-property-catalog-2026-06-16.md` is recent but lacks impact metrics",
+   "bSays": "leopard repo has several partial retrospective and documentation updates that need to be completed"
+  },
+  {
+   "topic": "ember's Reflect dual-judge",
+   "kind": "omission",
+   "aSays": "Introduced `GraphContext` and `ReflectDualJudge` logic, with new CLI and Discord integration",
+   "bSays": ""
+  },
+  {
+   "topic": "leopard's Night Lens",
+   "kind": "omission",
+   "aSays": "Implemented **Night Lens**—default Ask zoom now composes via property catalog",
+   "bSays": ""
+  }
+ ]
+}

@@ -1,0 +1,139 @@
+{
+  "smoke": false,
+  "K": 3,
+  "evidence_chars": 8844,
+  "testA": {
+    "A1_json_orig": {
+      "parse_ok": "3/3",
+      "divergences": [
+        5,
+        5,
+        5
+      ],
+      "mean_div": 5.0,
+      "runs": [
+        {
+          "parse_ok": true,
+          "agreements": 4,
+          "divergences": 5,
+          "latency_s": 13.6
+        },
+        {
+          "parse_ok": true,
+          "agreements": 4,
+          "divergences": 5,
+          "latency_s": 11.8
+        },
+        {
+          "parse_ok": true,
+          "agreements": 4,
+          "divergences": 5,
+          "latency_s": 11.8
+        }
+      ]
+    },
+    "A2_json_improved": {
+      "parse_ok": "3/3",
+      "divergences": [
+        4,
+        4,
+        4
+      ],
+      "mean_div": 4.0,
+      "runs": [
+        {
+          "parse_ok": true,
+          "agreements": 2,
+          "divergences": 4,
+          "latency_s": 11.1
+        },
+        {
+          "parse_ok": true,
+          "agreements": 2,
+          "divergences": 4,
+          "latency_s": 9.4
+        },
+        {
+          "parse_ok": true,
+          "agreements": 2,
+          "divergences": 4,
+          "latency_s": 9.4
+        }
+      ]
+    },
+    "A3_xml_improved": {
+      "parse_ok": "3/3",
+      "divergences": [
+        3,
+        3,
+        3
+      ],
+      "mean_div": 3.0,
+      "runs": [
+        {
+          "parse_ok": true,
+          "agreements": 1,
+          "divergences": 3,
+          "latency_s": 9.4
+        },
+        {
+          "parse_ok": true,
+          "agreements": 1,
+          "divergences": 3,
+          "latency_s": 7.6
+        },
+        {
+          "parse_ok": true,
+          "agreements": 1,
+          "divergences": 3,
+          "latency_s": 7.6
+        }
+      ]
+    }
+  },
+  "testB": {
+    "B1_plain": [
+      {
+        "ok": true,
+        "latency_s": 24.5
+      },
+      {
+        "ok": true,
+        "latency_s": 33.6
+      },
+      {
+        "ok": true,
+        "latency_s": 31.3
+      }
+    ],
+    "B2_xml_cite": [
+      {
+        "ok": true,
+        "latency_s": 18.0,
+        "citations": {
+          "total": 4,
+          "valid": 4,
+          "fabricated": []
+        }
+      },
+      {
+        "ok": true,
+        "latency_s": 26.2,
+        "citations": {
+          "total": 4,
+          "valid": 4,
+          "fabricated": []
+        }
+      },
+      {
+        "ok": true,
+        "latency_s": 22.4,
+        "citations": {
+          "total": 4,
+          "valid": 4,
+          "fabricated": []
+        }
+      }
+    ]
+  }
+}

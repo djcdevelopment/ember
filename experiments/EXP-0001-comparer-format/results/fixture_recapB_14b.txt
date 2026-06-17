@@ -1,0 +1,32 @@
+## What happened
+
+### b70tools
+- Updated documentation for the overnight regression harness, including README, plan, and retrospective files.
+- Added and modified scripts for regression testing and tooling.
+
+### ember
+- Updated the Reflect enable runbook and operating documentation.
+- Backfilled and committed RnD notes and Arc bring-up plans.
+- Superseded ADR 9 for the Windows phase, switching from vLLM to llama.cpp Vulkan.
+
+### leopard
+- Implemented new features such as the trend lens, property catalog, and configurable Ask provider.
+- Fixed chat errors and improved provider detection retries.
+- Completed and merged changes from the inventory canonical context pull request.
+- Updated documentation and retrospectives for various features and phases.
+
+### vllama
+- Implemented a resident-aware host-pressure preflight mechanism.
+
+## Threads & risks
+
+- **Cross-repo documentation**: There is a need to ensure consistency and cross-referencing of ADRs and documentation across repositories like `b70tools`, `ember`, `leopard`, and `vllama`.
+- **Half-done work**: The `leopard` repo has several partial retrospective and documentation updates that need to be completed.
+- **Follow-ups**: The `vllama` repo's changes need to be integrated and tested with the existing infrastructure in other repos to ensure compatibility.
+
+## Open questions
+
+- How will the updated overnight regression harness in `b70tools` be integrated and validated with the current development workflows?
+- What are the next steps for the Arc bring-up plan in `ember` and how will it impact ongoing development?
+- How will the new features in `leopard` be tested in real-world scenarios to ensure stability and performance?
+- How will the changes in `vllama` be monitored for any performance issues or conflicts with other components in the constellation?

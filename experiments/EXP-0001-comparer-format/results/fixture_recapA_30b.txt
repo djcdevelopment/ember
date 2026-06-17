@@ -1,0 +1,47 @@
+# Recap — 2026-06-16
+
+### **What happened**
+
+**b70tools**  
+- Finalized post-mortem documentation for the overnight regression test failure (2026-06-16), including impact analysis, root cause, and plan for recovery.  
+- Updated scripts for automated regression sweeps, particularly `Invoke-LeopardArtifactSweep.ps1` and `Start-ParserRegressionSweep.ps1`.  
+- Added `Start-AlwaysHotMoE.ps1` for persistent MoE model hosting.  
+- All changes focused on tooling and documentation around overnight inference regression.
+
+**ember**  
+- Updated `PLAN.md` to reflect current state of the Windows phase and ADR 12.  
+- Documented the Reflect enablement runbook and phased operator evening procedure.  
+- Added `RnD/07-arc-dual-card.md` with results from the first planner/critic run on Intel Arc dual-card hardware.  
+- Superseded ADR 9 to adopt `llama.cpp` with Vulkan backend instead of vLLM for Windows.  
+- Introduced `GraphContext` and `ReflectDualJudge` logic, with new CLI and Discord integration.  
+- Updated configuration and testing for Reflect execution and recap storage.
+
+**leopard**  
+- Completed **Explorer Phase 2**: ghosts are live (5 registry flips, 3 new endpoints).  
+- Introduced the **Trend Lens** and **Property Catalog** as unified UI/UX layers, with palettes derived from a single registry (ADR-0011).  
+- Added configurable Ask provider (Ollama/OpenAI), removing hardcoded port 11434.  
+- Implemented **Night Lens**—default Ask zoom now composes via property catalog.  
+- Closed Windows-side checks in `property-inventory.md`.  
+- Updated ADRs, retros, and feature documentation to reflect shipped state.
+
+**vllama**  
+- Implemented **resident-aware host-pressure preflight** (ADR-0006), adjusting process scheduling based on host load.  
+- Added `ProcessUtil` and `SlotManager` logic to manage resource pressure during model residency.  
+- Updated documentation and code to reflect new lifecycle behavior.
+
+---
+
+### **Threads & risks**
+
+- **Cross-repo dependency**: `ember`’s new `llama.cpp` Vulkan plan (via ADR 12) directly impacts `vllama`’s host pressure logic and `leopard`’s Ask provider configuration.  
+- **Race in regression tooling**: `b70tools`’ overnight regression scripts may not yet account for the new `llama.cpp` runtime behavior.  
+- **Unverified integration**: `ember`’s Reflect dual-judge and `leopard`’s Explorer ghosts are now live, but no end-to-end validation has been documented.  
+- **Documentation debt**: `leopard`’s `retros/trend-lens-and-property-catalog-2026-06-16.md` is recent but lacks impact metrics.
+
+---
+
+### **Open questions**
+
+- Are the `llama.cpp` Vulkan runs on Intel Arc stable enough to be the new baseline?  
+- Does `vllama`’s resident-aware preflight properly handle concurrent MoE loads from `b70tools`?  
+- How will `ember

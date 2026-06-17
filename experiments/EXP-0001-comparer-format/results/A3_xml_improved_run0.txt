@@ -1,0 +1,23 @@
+<comparison>
+  <agreements><item>shared claim</item></agreements>
+  <divergences>
+    <divergence>
+      <topic>regression scripts</topic>
+      <kind>contradiction</kind>
+      <a>b70tools’ overnight regression scripts may not yet account for the new llama.cpp runtime behavior.</a>
+      <b>The updated overnight regression harness in b70tools will be integrated and validated with the current development workflows.</b>
+    </divergence>
+    <divergence>
+      <topic>Reflect dual-judge and Explorer ghosts</topic>
+      <kind>omission</kind>
+      <a>ember’s Reflect dual-judge and leopard’s Explorer ghosts are now live, but no end-to-end validation has been documented.</a>
+      <b></b>
+    </divergence>
+    <divergence>
+      <topic>leopard's documentation</topic>
+      <kind>omission</kind>
+      <a>leopard’s retros/trend-lens-and-property-catalog-2026-06-16.md is recent but lacks impact metrics.</a>
+      <b></b>
+    </divergence>
+  </divergences>
+</comparison>

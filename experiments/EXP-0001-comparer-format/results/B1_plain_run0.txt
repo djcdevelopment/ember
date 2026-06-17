@@ -1,0 +1,40 @@
+### **What happened**
+
+**b70tools**  
+- Finalized a retrospective on the overnight regression test for real-time inference impact, documenting findings in `retrospective-wow-realtime-inference-impact-overnight-2026-06-16.md`.  
+- Updated the overnight regression harness scripts (`Run-OvernightAll.ps1`, `Invoke-LeopardArtifactSweep.ps1`, `Start-ParserRegressionSweep.ps1`) to support the new test plan.  
+- Added a new plan document (`overnight-regression-plan-2026-06-16.md`) and updated the inference backlog (`inference-test-backlog.md`).  
+- No code changes; all updates are documentation and tooling orchestration.
+
+**ember**  
+- Advanced the Windows-phase runbook with a phased enablement guide for the Reflect feature.  
+- Updated `PLAN.md` to reflect current reality post-ADR 12, including the shift to llama.cpp Vulkan.  
+- Added R&D notes on the Arc dual-card bring-up and documented the dual-judge recap for Reflect.  
+- Introduced `GraphContext` and `ReflectRunner` classes, and updated CLI and Discord integration (`ReflectCommand`, `ReflectCli`).  
+- Superseded ADR 9 to formally adopt llama.cpp Vulkan over vLLM for Windows inference.
+
+**leopard**  
+- Completed the **night lens** and **trend lens**, enabling dynamic property composition via a unified palette registry (ADR-0011).  
+- Added configurable Ask provider (Ollama/OpenAI), removing hardcoded port 11434.  
+- Enabled Explorer Phase 2 ghosts with five registry flips and three new endpoints.  
+- Launched the knowledge-library IDE (Phase 1: four live RaidUI-port objects).  
+- Closed all Windows-side checks in the property inventory.  
+- Updated retros and ADRs to reflect recent shipping events.
+
+**vllama**  
+- Implemented resident-aware host-pressure preflight (ADR-0006), with `SlotManager` and `ProcessUtil` now monitoring resource pressure before launching models.  
+- Added documentation and refined lifecycle logic to prevent overloading.
+
+---
+
+### **Threads & risks**  
+- **Cross-repo dependency**: `ember`’s Reflect feature relies on `leopard`’s Explorer and Ask infrastructure (e.g., `GraphContext`, `property-catalog`), but no integration tests are visible in the evidence.  
+- **Windows phase alignment**: `ember` now uses llama.cpp Vulkan, but `vllama`’s resident-aware logic may conflict with llama.cpp’s memory model—no validation of this interaction in evidence.  
+- **Regression risk**: `b70tools`’ overnight harness now includes `leopard` artifacts, but no evidence of test results or failure recovery protocols in `b70tools`’ scripts.
+
+---
+
+### **Open questions**  
+- How does `ember`’s `ReflectRunner` interact with `leopard`’s `Explorer` and `Ask` systems in practice?  
+- Is `vllama`’s host-pressure logic tested under load with `leopard`’s `property-catalog`-driven inference?  
+- Are the `overnight-regression` scripts in `b70tools` actually running, or are they just updated?

@@ -1,0 +1,31 @@
+### **What happened**
+
+**b70tools**  
+Updated overnight regression documentation and tooling scripts for real-time inference impact tracking. Added retrospective notes on the 2026-06-16 regression event, refined the *wow-realtime-inference-impact-plan*, and updated PowerShell scripts for artifact and parser sweeps. No code changes — purely documentation and process.
+
+**ember**  
+Advanced Windows-phase planning with a new runbook for Reflect enablement and updated `PLAN.md` to reflect ADR 12’s current state. Implemented dual-judge recap logic and updated graph context awareness. Added a record of the first planner/critic run on the Arc dual-card system. Superseded ADR 9 to switch from vLLM to `llama.cpp` Vulkan for Windows local inference.
+
+**leopard**  
+Implemented the **trend lens** and **property catalog** with a unified palette registry (ADR-0011). Introduced configurable Ask providers (Ollama/OpenAI), retiring hardcoded ports. Added the **night lens** and **over-time slices** for encounter reconciliation. Finalized Explorer Phase 2 ghosts (five registry flips, three new endpoints) and launched the knowledge-library IDE (Phase 1: four RaidUI-port objects). Updated documentation and retros for multiple completed milestones.
+
+**vllama**  
+Introduced resident-aware host pressure preflight via ADR-0006. Implemented logic in `SlotManager` and `ProcessUtil` to preemptively manage resource contention in resident mode. Updated ADR and README to document the new behavior.
+
+---
+
+### **Threads & risks**
+
+- **Cross-repo dependency**: ember’s shift to `llama.cpp` Vulkan (vs. vLLM) directly impacts vllama’s role — but vllama’s new preflight logic may now be redundant or misaligned if `llama.cpp` handles pressure differently.
+- **Leopard’s Explorer Phase 2** is declared “live” but relies on `raidui` and `discoverlay` (quiet repos) — no evidence of integration or health checks.
+- **b70tools’ overnight regression harness** is now active, but its outcome (e.g., impact on leopard/ember) is not yet visible in the logs or metrics.
+- **ember’s Reflect dual-judge recap** depends on `leopard`’s new property catalog and trend lens — but no integration tests or validation logs are present.
+
+---
+
+### **Open questions**
+
+- Does `vllama`’s preflight logic still serve a purpose with `llama.cpp` as the default?  
+- Are the five registry flips in Explorer Phase 2 fully integrated with `raidui` and `discoverlay` (both quiet)?  
+- How is the *trend lens* data being consumed by ember’s planner or reflect system?  
+- Was the overnight regression test run successfully, and did it catch any regressions?

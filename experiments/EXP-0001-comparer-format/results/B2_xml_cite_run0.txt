@@ -1,0 +1,34 @@
+<recap>
+  <repo name="b70tools">
+    <claim>
+      <statement>Updated overnight regression documentation and scripts for the 2026-06-16 retrospective.</statement>
+      <from>docs/overnight-regression-plan-2026-06-16.md</from>
+    </claim>
+  </repo>
+  <repo name="ember">
+    <claim>
+      <statement>Updated the Reflect enable runbook to document the operator evening, phase by phase.</statement>
+      <from>docs/reflect-enable-runbook.md</from>
+    </claim>
+  </repo>
+  <repo name="leopard">
+    <claim>
+      <statement>Introduced the trend lens and property catalog, with palettes deriving from a single registry as per ADR-0011.</statement>
+      <from>docs/adr/0011-property-catalog-single-source-palettes-derive.md</from>
+    </claim>
+  </repo>
+  <repo name="vllama">
+    <claim>
+      <statement>Implemented resident-aware host-pressure preflight as defined in ADR-0006.</statement>
+      <from>docs/adr/0006-resident-aware-host-pressure.md</from>
+    </claim>
+  </repo>
+  <threads>
+    <thread>Changes in ember and leopard suggest integration of Reflect and Explorer phase 2 components, though no direct code linkage is evident in the evidence.</thread>
+    <thread>Leopard’s property catalog and b70tools’ overnight regression scripts may share data modeling assumptions, but no cross-repo file references confirm this.</thread>
+  </threads>
+  <open-questions>
+    <question>How do the updated property catalog and trend lens in leopard interact with the overnight regression harness in b70tools?</question>
+    <question>Is the Reflect dual-judge recap in ember being used to validate the results of the Leopard Explorer phase 2 ghosts?</question>
+  </open-questions>
+</recap>

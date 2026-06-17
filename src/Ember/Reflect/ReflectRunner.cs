@@ -27,6 +27,11 @@ public sealed class ReflectOutcome
 
     public required string JudgeBModel { get; init; }
 
+    /// <summary>Grounding score "valid/total" for each recap's evidence citations (null if no recap).</summary>
+    public string? CitesA { get; set; }
+
+    public string? CitesB { get; set; }
+
     /// <summary>The composed recap text, ready for Discord or the console.</summary>
     public string PostText { get; set; } = "";
 
@@ -103,12 +108,28 @@ public sealed class ReflectRunner
             return outcome;
         }
 
-        var (recapA, errorA) = await JudgeAsync(_judgeA, outcome.JudgeAModel, evidence.Text, ct);
-        var (recapB, errorB) = await JudgeAsync(_judgeB, outcome.JudgeBModel, evidence.Text, ct);
-        outcome.RecapA = recapA;
-        outcome.RecapB = recapB;
+        var (rawA, errorA) = await JudgeAsync(_judgeA, outcome.JudgeAModel, evidence.Text, ct);
+        var (rawB, errorB) = await JudgeAsync(_judgeB, outcome.JudgeBModel, evidence.Text, ct);
 
-        if (recapA is null && recapB is null)
+        // Recaps arrive as XML with per-claim <from> citations (ADR 16 / EXP-0001). Render to
+        // readable markdown for the post and the comparison, and score grounding by checking
+        // each citation against the evidence — the near-free trust signal the experiment surfaced.
+        var mdA = rawA is null ? null : RecapXml.Render(rawA);
+        var mdB = rawB is null ? null : RecapXml.Render(rawB);
+        outcome.RecapA = mdA;
+        outcome.RecapB = mdB;
+        if (rawA is not null)
+        {
+            var (valid, total) = RecapXml.CountCitations(rawA, evidence.Text);
+            outcome.CitesA = $"{valid}/{total}";
+        }
+        if (rawB is not null)
+        {
+            var (valid, total) = RecapXml.CountCitations(rawB, evidence.Text);
+            outcome.CitesB = $"{valid}/{total}";
+        }
+
+        if (mdA is null && mdB is null)
         {
             outcome.Status = RecapStatus.Failed;
             outcome.Error = $"both judges failed — A: {errorA}; B: {errorB}";
@@ -116,11 +137,11 @@ public sealed class ReflectRunner
             return outcome;
         }
 
-        if (recapA is not null && recapB is not null)
+        if (mdA is not null && mdB is not null)
         {
             using (Telemetry.Activity.StartActivity("reflect.compare"))
             {
-                outcome.Comparison = await _comparer.CompareAsync(recapA, recapB, ct);
+                outcome.Comparison = await _comparer.CompareAsync(mdA, mdB, ct);
             }
         }
 
@@ -159,6 +180,8 @@ public sealed class ReflectRunner
 
         var sb = new StringBuilder();
         sb.AppendLine($"**Reflect — {DateTime.Now:yyyy-MM-dd}** · {string.Join(", ", changed)}");
+        if (outcome.CitesA is not null || outcome.CitesB is not null)
+            sb.AppendLine($"_Grounding (claims cited to evidence) — A: {outcome.CitesA ?? "-"}, B: {outcome.CitesB ?? "-"}._");
         sb.AppendLine();
 
         if (outcome.RecapA is not null)
@@ -189,7 +212,10 @@ public sealed class ReflectRunner
             {
                 sb.AppendLine("**Divergences — worth a look**");
                 foreach (var d in cmp.Divergences)
-                    sb.AppendLine($"- **{d.Topic}** — A: {d.ASays} / B: {d.BSays}");
+                {
+                    var kind = string.IsNullOrWhiteSpace(d.Kind) ? "" : $" _{d.Kind}_";
+                    sb.AppendLine($"- **{d.Topic}**{kind} — A: {d.ASays} / B: {d.BSays}");
+                }
                 sb.AppendLine();
             }
             else if (cmp.Agreements.Count > 0)

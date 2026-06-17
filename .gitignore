@@ -11,3 +11,9 @@ worktrees/
 
 # swap-proxy run log
 swaps.jsonl
+
+# codebase-memory: commit the reasoning-model ADR (.codebase-memory/adr.md) as the
+# graph-native, git-versioned reasoning record; ignore the derived graph blobs.
+.codebase-memory/*.zst
+.codebase-memory/*.db
+.codebase-memory/*.db-*

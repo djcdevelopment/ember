@@ -1,0 +1,34 @@
+<recap>
+  <repo name="b70tools">
+    <claim>
+      <statement>Updated the overnight regression plan and retrospective for the 2026-06-16 run</statement>
+      <from>docs/overnight-regression-plan-2026-06-16.md</from>
+    </claim>
+  </repo>
+  <repo name="ember">
+    <claim>
+      <statement>Updated the Reflect enable runbook to align with the operator evening phase-by-phase execution</statement>
+      <from>docs/reflect-enable-runbook.md</from>
+    </claim>
+  </repo>
+  <repo name="leopard">
+    <claim>
+      <statement>Implemented the trend lens and property catalog, with palettes derived from a single registry as per ADR-0011</statement>
+      <from>docs/adr/0011-property-catalog-single-source-palettes-derive.md</from>
+    </claim>
+  </repo>
+  <repo name="vllama">
+    <claim>
+      <statement>Added resident-aware host-pressure preflight logic based on ADR-0006</statement>
+      <from>docs/adr/0006-resident-aware-host-pressure.md</from>
+    </claim>
+  </repo>
+  <threads>
+    <thread>Changes in ember’s Reflect dual-judge recap and leopard’s property catalog suggest integration points around shared state or metadata, but no direct dependency is cited in the evidence.</thread>
+    <thread>The update to vllama’s host-pressure preflight may affect resource allocation for leopard’s Explorer phase 2, but no cross-repo call or file path confirms this interaction.</thread>
+  </threads>
+  <open-questions>
+    <question>Does the property catalog in leopard fully replace the need for external palettes, and how is this coordination validated across repos?</question>
+    <question>Is the resident-aware host-pressure preflight in vllama intended to influence the execution of overnight regression sweeps in b70tools?</question>
+  </open-questions>
+</recap>

@@ -1,0 +1,30 @@
+{
+ "agreements": ["vllama implemented resident-aware host-pressure preflight mechanism", "leopard completed Explorer Phase 2 and introduced new UI/UX layers", "ember updated Reflect enablement runbook and phased operator evening procedure", "b70tools updated scripts for automated regression sweeps"],
+ "divergences": [
+    {
+        "topic": "Cross-repo dependency",
+        "aSays": "ember’s new llama.cpp Vulkan plan impacts vllama’s host pressure logic and leopard’s Ask provider configuration",
+        "bSays": "need to ensure consistency and cross-referencing of ADRs and documentation across repositories"
+    },
+    {
+        "topic": "Race in regression tooling",
+        "aSays": "b70tools’ overnight regression scripts may not yet account for the new llama.cpp runtime behavior",
+        "bSays": "updated overnight regression harness in b70tools needs to be integrated and validated with current development workflows"
+    },
+    {
+        "topic": "Unverified integration",
+        "aSays": "ember’s Reflect dual-judge and leopard’s Explorer ghosts are now live, but no end-to-end validation has been documented",
+        "bSays": "new features in leopard need to be tested in real-world scenarios to ensure stability and performance"
+    },
+    {
+        "topic": "Documentation debt",
+        "aSays": "leopard’s retros/trend-lens-and-property-catalog-2026-06-16.md lacks impact metrics",
+        "bSays": "leopard repo has several partial retrospective and documentation updates that need to be completed"
+    },
+    {
+        "topic": "Open questions",
+        "aSays": "Are the llama.cpp Vulkan runs on Intel Arc stable enough to be the new baseline?",
+        "bSays": "What are the next steps for the Arc bring-up plan in ember and how will it impact ongoing development?"
+    }
+ ]
+}

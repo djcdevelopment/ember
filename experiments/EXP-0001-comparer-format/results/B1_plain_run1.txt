@@ -1,0 +1,27 @@
+# Recap — 2026-06-16
+
+### **What happened**
+
+**b70tools**  
+Finalized the overnight regression retrospective and plan for the 2026-06-16 run. Updated documentation around the real-time inference impact, including the *wow-realtime-inference-impact-plan.md* and *overnight-regression-plan-2026-06-16.md*. Scripted the overnight regression sweep via PowerShell, including artifact sweep and parser regression testing. No code changes — purely documentation and orchestration.
+
+**ember**  
+Advanced the Windows phase of the constellation with a new ADR (0012) explicitly choosing `llama.cpp Vulkan` over `vLLM` for local inference. Updated `PLAN.md` and `README.md` to reflect current state. Documented the Reflect enable runbook and operator evening workflow. Integrated `GraphContext` and `Reflect` dual-judge recap into the loop. Conducted a first planner/critic run on the Arc dual-card box and committed the result as a record. The Arc bring-up plan was formally archived as “overtaken by events.”
+
+**leopard**  
+Completed the *Trend Lens* and *Property Catalog* features (ADR-0011), enabling dynamic palette derivation from a single registry. Introduced the *Night Lens*, where Ask’s default zoom becomes a property composer. Enabled configurable Ask providers (Ollama/OpenAI), removing hardcoded port 11434. Lit up Explorer Phase 2 ghosts (five registry flips, three new endpoints). Launched the knowledge-library IDE (Phase 1: four live RaidUI-port objects). Updated retros for multiple recent milestones, including the *live-marathon-and-math-port* and *explorer-knowledge-ide*.
+
+**vllama**  
+Introduced a resident-aware host-pressure preflight (ADR-0006), ensuring slot allocation respects resident model pressure. Added logic in `SlotManager` and `ProcessUtil` to preemptively check system load before spawning processes. Documented the design in `docs/adr/0006-resident-aware-host-pressure.md`.
+
+### **Threads & risks**
+
+- **Cross-repo alignment on inference stack**: `ember`’s shift to `llama.cpp Vulkan` and `vllama`’s host-pressure logic must align with `leopard`’s provider abstraction and `b70tools`’ overnight regression tests. No evidence of integration testing yet.
+- **Arc dual-card bring-up**: `ember`'s RnD/07 run is recorded, but no sign of validation in `b70tools`’ regression suite — risk of untested hardware path.
+- **Explorer Phase 2 and the property catalog**: `leopard`’s new features depend on `b70tools`’ artifact sweep and `ember`’s planning context — no evidence of end-to-end validation.
+
+### **Open questions**
+
+- Are the `llama.cpp Vulkan` and `vllama` host-pressure systems tested together in the overnight regression?
+- Has the `leopard` Explorer Phase 2 ghost implementation been verified in the `b70tools` regression pipeline?
+- Is the `ember` Reflect runbook currently driving live operator workflows, or is it still theoretical?

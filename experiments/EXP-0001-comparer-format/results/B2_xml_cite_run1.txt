@@ -1,0 +1,36 @@
+<recap>
+  <repo name="b70tools">
+    <claim>
+      <statement>Updated the overnight regression plan and retrospective for the 2026-06-16 run, including impact documentation for real-time inference.</statement>
+      <from>docs/overnight-regression-plan-2026-06-16.md</from>
+    </claim>
+  </repo>
+  <repo name="ember">
+    <claim>
+      <statement>Updated the Windows phase runbook to point to the validated local stack and documented the Reflect enable runbook phase-by-phase.</statement>
+      <from>docs/reflect-enable-runbook.md</from>
+    </claim>
+  </repo>
+  <repo name="leopard">
+    <claim>
+      <statement>Implemented the trend lens and property catalog, with palettes deriving from a single registry, as defined in ADR-0011.</statement>
+      <from>docs/adr/0011-property-catalog-single-source-palettes-derive.md</from>
+    </claim>
+  </repo>
+  <repo name="vllama">
+    <claim>
+      <statement>Added resident-aware host-pressure preflight logic as per ADR-0006.</statement>
+      <from>docs/adr/0006-resident-aware-host-pressure.md</from>
+    </claim>
+  </repo>
+  <threads>
+    <thread>Changes in ember and leopard both reference and depend on the updated Windows-phase stack and local inference configuration, particularly around llama.cpp Vulkan, which is now the validated path.</thread>
+    <thread>The property catalog and trend lens in leopard rely on a shared registry that may influence how Ember’s graph context and Reflect judge interpret state, though no direct code linkage is present.</thread>
+    <thread>Leopard’s Explorer phase 2 ghosts and the updated Ask provider configuration may interact with vllama’s host-pressure preflight, but no integration evidence is visible in the changed files.</thread>
+  </threads>
+  <open-questions>
+    <question>Does the property catalog in leopard fully replace the previous palette system, and how is it synchronized with Ember’s graph context?</question>
+    <question>Is the llama.cpp Vulkan configuration in ember compatible with the host-pressure preflight logic in vllama, and are there any runtime conflicts?</question>
+    <question>How are the overnight regression results from b70tools being consumed by the Ember and leopard workflows?</question>
+  </open-questions>
+</recap>
