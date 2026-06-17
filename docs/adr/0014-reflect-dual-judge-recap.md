@@ -6,6 +6,10 @@ Date: 2026-06-11
 
 Accepted
 
+Scheduling posture amended by [ADR 17](0017-reflect-manual-trigger-launcher.md): on this
+single-operator rig Reflect is **manual-only** (a desktop launcher / `/reflect`), not a nightly
+auto-run. The dual-judge recap design below stands unchanged — only what *starts* a run differs.
+
 ## Context
 
 R2 of the constellation-awareness plan (`D:\work\gad\pm\constellation-awareness-plan.md`):

@@ -21,3 +21,4 @@ Nygard-style (Context / Decision / Consequences).
 | [14](0014-reflect-dual-judge-recap.md) | Reflect: a scheduled dual-judge recap on the local cards, reactions as labels |
 | [15](0015-reflect-reindex-and-journal.md) | Reflect re-indexes before it reads (the graph goes stale), and journals each recap to git |
 | [16](0016-xml-cite-recaps-and-comparer.md) | XML-cite recaps + contradiction-or-omission comparer, adopted from EXP-0001 (first experiment-cited ADR) |
+| [17](0017-reflect-manual-trigger-launcher.md) | Reflect is operator-triggered, not scheduled: a desktop launcher warms the substrate through its safety gates, then fires one run via a loopback trigger |

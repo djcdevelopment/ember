@@ -84,13 +84,19 @@ the fail-soft path working; fix Phase 1 and rerun.
 1. **Create the channel** on ember's server (suggestion: `#reflect`).
 2. **Copy its id:** Discord → User Settings → Advanced → Developer Mode ON →
    right-click the channel → *Copy Channel ID*.
-3. **Set the two switches** (user-secrets — machine-local, never committed):
+3. **Set the switches** (user-secrets — machine-local, never committed):
 
    ```powershell
    cd D:\work\ember\src\Ember
    dotnet user-secrets set "Ember:Reflect:Enabled" "true"
    dotnet user-secrets set "Ember:Reflect:ChannelId" "<paste the id>"
+   dotnet user-secrets set "Ember:Reflect:ScheduleEnabled" "false"   # manual-only (ADR 17)
+   dotnet user-secrets set "Ember:Reflect:LocalTriggerPort" "8091"   # desktop-launcher trigger
    ```
+
+   `ScheduleEnabled=false` keeps Reflect enabled for `/reflect` and the launcher but idles the
+   nightly 03:00 auto-run; `LocalTriggerPort` arms the loopback trigger the launcher pokes. To
+   return to the unattended nightly, set `ScheduleEnabled=true` and `LocalTriggerPort=0`.
 
 4. **Start the bot** (its own terminal; Discord secrets are already set):
 
@@ -98,9 +104,10 @@ the fail-soft path working; fix Phase 1 and rerun.
    dotnet run --project D:\work\ember\src\Ember
    ```
 
-**Checkpoint:** the log shows `Reflect scheduler armed for 03:00 local daily`, and
-Discord shows ember online with `/reflect` in the command list (commands re-register
-on startup).
+**Checkpoint:** the log shows `Reflect schedule disabled (Ember:Reflect:ScheduleEnabled=false);
+manual-only` and `Reflect local trigger listening on http://127.0.0.1:8091/`, and Discord shows
+ember online with `/reflect` in the command list (commands re-register on startup). (With
+`ScheduleEnabled=true` the first line instead reads `Reflect scheduler armed for 03:00 local daily`.)
 
 ---
 
@@ -121,10 +128,10 @@ recap; baselines recorded.`
 
 Two ways to get there:
 
-- **Patient:** leave the bot running; tonight at 03:00 it recaps whatever you
-  committed today after the baseline run.
-- **Impatient:** do some work, commit it, run `/reflect` again — the recap thread
+- **Launcher (the daily driver, ADR 17):** double-click **`Reflect Now.cmd`** on the Desktop.
+  It warms vllama through its gates, ensures the bot, and fires one run — the recap thread
   (`reflect: 2026-06-xx`) appears in the channel.
+- **By hand:** do some work, commit it, run `/reflect` — the same run, started from Discord.
 
 When the thread appears: read both recaps, then **react on the label message** —
 ✅ accurate · ✏️ partially · ❌ wrong. The reaction persists to the `recaps` table;
@@ -143,6 +150,29 @@ This night starts the **seven-night R2 gate** from the constellation-awareness p
 
 ---
 
+## Daily driver — the manual launcher (ADR 17)
+
+Day to day, Reflect is **manual-only**: nothing fires at 03:00, so a recap never competes with a
+late-night build, test, or stream for the B70s. To run one:
+
+> **Double-click `Reflect Now.cmd` on the Desktop.**
+
+It (`scripts/Start-Reflect.ps1`) does, in order, stopping at the first failure:
+
+1. **vllama facade** — starts `vllama serve` (:8090) if it isn't already up.
+2. **judges resident** — `vllama up` for planner + critic *through the 22 GB host-RAM gate*. If
+   the rig is loaded, vllama refuses and the launcher stops and says so — free RAM / end the
+   stream and re-run. It never forces a load.
+3. **bot** — ensures ember is up and Discord-connected (starts it if down).
+4. **runs the recap** via the loopback trigger and **waits** for the judges to finish (a few minutes).
+5. **frees the GPUs** — `vllama kill-all` releases the judges' VRAM so the rig is yours again (the
+   facade stays up to speed the next run). Pass `-KeepWarm` to leave the judges resident.
+
+Then react on the label message as in Phase 5. `/reflect` in Discord remains an identical manual
+path when you're already in Discord — though it does **not** free the GPUs afterward; the launcher does.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause / fix |
@@ -151,7 +181,9 @@ This night starts the **seven-night R2 gate** from the constellation-awareness p
 | Judges fail with 503 | Alias's model not resident — `vllama status`, re-`up` the missing model, keep `serve` running. |
 | `Reflect channel ... not found` / `not a text channel` in log | ChannelId wrong, points at a voice channel, or bot lacks access — re-copy the id of the `#reflect` **text** channel. (Only surfaces on a real recap; the baseline run never posts.) |
 | critic `up` fails `port 8080 already open` | You omitted `--slot slot-b` on the second `up` — it defaulted to slot-a's port. Add it. |
-| A night fails entirely | By design it claims the day and does **not** advance baselines — tomorrow re-reports the same delta. `/reflect` is the manual retry. |
+| A run fails entirely | By design it claims the day and does **not** advance baselines — the next run re-reports the same delta. `/reflect` or the launcher is the manual retry. |
+| Launcher: "Ember.exe is running but the trigger isn't answering" | The bot predates the trigger or `LocalTriggerPort` isn't set — close the bot window and re-run the launcher to restart it. |
+| Launcher stops at "vllama refused to bring up …" | The 22 GB host-RAM gate fired — free RAM / end the stream and re-run. Working as intended, not a bug. |
 | Host RAM pressure | Don't run Ollama alongside the vllama pair on 32 GB; the lean llama.cpp path is the point until Workstation #99 (64 GB) lands. |
 | Recap quality is rough | Expected at first — that's what the seven nights and your labels measure. Judge models are config (`Models:ReflectA/B`), upgradeable after battlemage Q2 without code. |
 

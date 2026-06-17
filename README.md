@@ -157,8 +157,9 @@ All commands are locked to the configured owner.
 
 ## Reflect
 
-A scheduled (default 03:00 local) dual-judge recap of the constellation's
-committed work since the last recap: git supplies each repo's delta, the code
+A dual-judge recap of the constellation's committed work since the last recap —
+**operator-triggered** on this rig (a desktop launcher; ADR 17), not a nightly auto-run:
+git supplies each repo's delta, the code
 knowledge graph enriches it with the symbols behind the changed files, two
 local models on the vllama facade write independent recaps, and a structured
 comparison surfaces their divergences. Each recap claim must cite the evidence that
@@ -169,12 +170,17 @@ repo before reading it and journals the recap to git (ADR 15). The recap posts a
 later adaptation loop trains against. See ADRs
 [14](docs/adr/0014-reflect-dual-judge-recap.md),
 [15](docs/adr/0015-reflect-reindex-and-journal.md),
-[16](docs/adr/0016-xml-cite-recaps-and-comparer.md).
+[16](docs/adr/0016-xml-cite-recaps-and-comparer.md),
+[17](docs/adr/0017-reflect-manual-trigger-launcher.md).
 
 **Disabled by default.** To enable: set `Ember:Reflect:Enabled` to `true` and
-`Ember:Reflect:ChannelId` to the target channel. The pipeline never launches a
-model server — if the vllama endpoints are down, the run fails soft and the
-night re-reports tomorrow.
+`Ember:Reflect:ChannelId` to the target channel. On this rig it runs **manual-only**
+(`Ember:Reflect:ScheduleEnabled=false`); the daily driver is the desktop launcher
+`scripts/Start-Reflect.ps1` (shim `Reflect Now.cmd`), which warms the judges through
+vllama's gate, triggers one recap via a loopback endpoint (`Ember:Reflect:LocalTriggerPort`),
+and frees the GPUs afterward (ADR 17). Set `ScheduleEnabled=true` for the nightly auto-run
+instead. The pipeline never launches a model server — if the vllama endpoints are down, the
+run fails soft and re-reports next time.
 
 Validate the pipeline read-only from the console — no Discord, no database,
 baseline resolved from git:
