@@ -5,8 +5,11 @@ The local-loop rehearsal (ADR 10) ran on the 4070 Ti via Ollama and a swap
 proxy; the Arc hardware then landed and validated llama.cpp Vulkan as the
 Windows-phase stack (ADR 12, superseding ADR 9's vLLM call). Post-v1, ember
 carries the constellation-awareness layers: knowledge-graph round-1 context
-(ADR 13) and the Reflect dual-judge recap — disabled by default, operator-triggered on this rig (ADRs 14, 17) —
-plan of record in `D:\work\gad\pm\constellation-awareness-plan.md`.
+(ADR 13); the Reflect dual-judge recap — disabled by default, operator-triggered on this rig
+(ADRs 14, 17), now graph-first in its evidence with resilient judges (ADR 18); and the
+overnight backlog planner — the morning brief + safe PM reconciliation (ADR 19) — ember
+re-aimed at its origin job. Plans of record in `D:\work\gad\pm\constellation-awareness-plan.md`,
+`reflect-graph-first-plan.md`, and `ember-overnight-planner-plan.md`.
 
 ## What ember is
 
