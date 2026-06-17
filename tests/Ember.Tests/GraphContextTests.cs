@@ -143,6 +143,37 @@ public class GraphContextTests
     public void DeriveProjectName_matches_the_cli_convention(string path, string expected) =>
         Assert.Equal(expected, GraphContext.DeriveProjectName(path));
 
+    [Fact]
+    public async Task ReindexAsync_issues_an_index_repository_call_with_forward_slashes()
+    {
+        var graph = new FakeGraph(Opts(), new() { ["index_repository"] = """{"status":"indexed","nodes":10}""" });
+
+        var ok = await graph.ReindexAsync(@"D:\work\ember", CancellationToken.None);
+
+        Assert.True(ok);
+        var (tool, json) = Assert.Single(graph.Calls);
+        Assert.Equal("index_repository", tool);
+        Assert.Contains("D:/work/ember", json); // forward-slashed — no backslash-escape hazard
+    }
+
+    [Fact]
+    public async Task ReindexAsync_returns_false_when_cli_fails()
+    {
+        var graph = new FakeGraph(Opts(), new()); // index_repository -> null
+        Assert.False(await graph.ReindexAsync(@"D:\work\ember", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ReindexAsync_is_a_noop_when_graph_disabled()
+    {
+        var options = Opts();
+        options.Value.Graph.Enabled = false;
+        var graph = new FakeGraph(options, new() { ["index_repository"] = """{"status":"indexed"}""" });
+
+        Assert.False(await graph.ReindexAsync(@"D:\work\ember", CancellationToken.None));
+        Assert.Empty(graph.Calls);
+    }
+
     private static IOptions<EmberOptions> Opts() =>
         Options.Create(new EmberOptions { Graph = new GraphOptions { Enabled = true, MaxChars = 4000 } });
 

@@ -104,9 +104,53 @@ public sealed class EvidenceAssemblerTests : IDisposable
         return await assembler.AssembleAsync(mode, CancellationToken.None);
     }
 
+    [SkippableFact]
+    public async Task Changed_repo_is_reindexed_before_its_symbols_are_read()
+    {
+        Skip.IfNot(GitWorks(), "git is not available on this host.");
+        var repo = CreateRepo("alpha", out var first, out _);
+
+        var options = new EmberOptions
+        {
+            Graph = new GraphOptions { Enabled = true, ReindexBeforeRead = true },
+        };
+        options.Repos["alpha"] = new RepoEntry { Path = repo };
+        var opt = Options.Create(options);
+        var graph = new RecordingGraph(opt);
+        var assembler = new EvidenceAssembler(graph, opt, NullLogger<EvidenceAssembler>.Instance);
+
+        await assembler.AssembleAsync(
+            new BaselineMode.LastRecorded(new Dictionary<string, string> { ["alpha"] = first }),
+            CancellationToken.None);
+
+        // The freshness fix: reindex must happen, and before the symbol read.
+        var reindexAt = graph.Tools.IndexOf("index_repository");
+        var searchAt = graph.Tools.IndexOf("search_graph");
+        Assert.True(reindexAt >= 0, "changed repo should be re-indexed");
+        Assert.True(searchAt < 0 || reindexAt < searchAt, "reindex should precede the symbol search");
+    }
+
     private static EvidenceAssembler NewAssembler(IOptions<EmberOptions> options) =>
         new(new GraphContext(options, NullLogger<GraphContext>.Instance),
             options, NullLogger<EvidenceAssembler>.Instance);
+
+    /// <summary>A GraphContext whose CLI seam records the tools called, in order, and returns
+    /// canned JSON — so we can assert the reindex-before-read ordering without a real index.</summary>
+    private sealed class RecordingGraph : GraphContext
+    {
+        public List<string> Tools { get; } = new();
+
+        public RecordingGraph(IOptions<EmberOptions> options)
+            : base(options, NullLogger<GraphContext>.Instance) { }
+
+        protected override Task<string?> RunToolAsync(string tool, string argsJson, CancellationToken ct)
+        {
+            Tools.Add(tool);
+            return Task.FromResult<string?>(tool == "index_repository"
+                ? """{"status":"indexed"}"""
+                : """{"total":0,"results":[]}""");
+        }
+    }
 
     private static IOptions<EmberOptions> OptionsFor(params (string Key, string Path)[] repos)
     {

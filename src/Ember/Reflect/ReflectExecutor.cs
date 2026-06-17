@@ -20,6 +20,7 @@ public sealed class ReflectExecutor
 
     private readonly ReflectRunner _runner;
     private readonly RecapStore _store;
+    private readonly JournalWriter _journal;
     private readonly DiscordSocketClient _client;
     private readonly ThreadGateway _threads;
     private readonly EmberOptions _options;
@@ -29,6 +30,7 @@ public sealed class ReflectExecutor
     public ReflectExecutor(
         ReflectRunner runner,
         RecapStore store,
+        JournalWriter journal,
         DiscordSocketClient client,
         ThreadGateway threads,
         IOptions<EmberOptions> options,
@@ -36,6 +38,7 @@ public sealed class ReflectExecutor
     {
         _runner = runner;
         _store = store;
+        _journal = journal;
         _client = client;
         _threads = threads;
         _options = options.Value;
@@ -81,7 +84,10 @@ public sealed class ReflectExecutor
             recap.Error = outcome.Error;
 
             if (outcome.Status == RecapStatus.Ran)
+            {
                 await PostAsync(recap, outcome.PostText);
+                await _journal.WriteAsync(recap.Date, outcome.PostText, ct);
+            }
         }
         catch (OperationCanceledException)
         {

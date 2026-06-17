@@ -85,6 +85,7 @@ builder.Services.AddSingleton<PlanningLoopRunner>();
 
 // ── Reflect (dual-judge recap) ────────────────────────────────────────────────
 builder.Services.AddSingleton<RecapStore>();
+builder.Services.AddSingleton<JournalWriter>();
 builder.Services.AddSingleton<EvidenceAssembler>();
 builder.Services.AddSingleton<DivergenceComparer>();
 builder.Services.AddSingleton<ReflectRunner>();

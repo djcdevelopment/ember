@@ -147,6 +147,14 @@ public sealed class GraphOptions
 
     /// <summary>Hard cap on the graph-context section folded into the round-1 prompt.</summary>
     public int MaxChars { get; set; } = 4000;
+
+    /// <summary>
+    /// Re-index a repo before reading its symbols. The background watcher does not reliably
+    /// keep the graph fresh across sessions (ADR 15; ember sat 6 days stale on 2026-06-17),
+    /// so reads that must be correct — Reflect's evidence enrichment — re-index just-in-time.
+    /// On disables it for fast interactive iteration.
+    /// </summary>
+    public bool ReindexBeforeRead { get; set; } = true;
 }
 
 /// <summary>
@@ -176,6 +184,19 @@ public sealed class ReflectOptions
 
     /// <summary>Cap on the whole evidence bundle handed to each judge.</summary>
     public int MaxTotalEvidenceChars { get; set; } = 16000;
+
+    /// <summary>
+    /// Absolute directory for the dated recap markdown artifact (e.g.
+    /// <c>D:\\work\\gad\\pm\\journal\\reflect</c>). Empty disables journaling. The git trail
+    /// is what makes a cron/on-demand run's history durable (ADR 15).
+    /// </summary>
+    public string JournalDir { get; set; } = "";
+
+    /// <summary>
+    /// Commit the journal artifact in its repo after writing it (additive, by-name). Off by
+    /// default — observe the written files first, then enable for the unattended cron run.
+    /// </summary>
+    public bool CommitArtifacts { get; set; }
 }
 
 /// <summary>Settings for the headless Claude Code builder.</summary>

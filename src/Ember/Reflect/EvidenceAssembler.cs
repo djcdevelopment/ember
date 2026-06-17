@@ -147,6 +147,12 @@ public sealed class EvidenceAssembler
                 sb.AppendLine($"- ...({files.Count - reflect.MaxFilesPerRepo} more)");
         }
 
+        // Freshen the graph before reading symbols — the watcher is not reliable across
+        // sessions, and stale enrichment is a silent correctness bug (ADR 15). Only changed
+        // repos reach here, so the cost is bounded. Soft: ReindexAsync never throws.
+        if (_options.Graph.ReindexBeforeRead)
+            await _graph.ReindexAsync(path, ct);
+
         var symbols = await SafeSymbolsAsync(path, files, ct);
         if (symbols is not null)
         {

@@ -70,6 +70,23 @@ public class GraphContext
     }
 
     /// <summary>
+    /// Re-indexes a repo into the graph so a subsequent read reflects the working tree. The
+    /// watcher does not reliably refresh across sessions (ADR 15), so callers that need a
+    /// correct read — Reflect's enrichment — re-index first. Soft: any failure logs and
+    /// returns false; the caller proceeds against whatever the graph already holds.
+    /// </summary>
+    public async Task<bool> ReindexAsync(string repoPath, CancellationToken ct)
+    {
+        if (!_options.Graph.Enabled)
+            return false;
+        var json = await RunToolAsync(
+            "index_repository",
+            JsonSerializer.Serialize(new { repo_path = repoPath.Replace('\\', '/') }),
+            ct);
+        return json is not null && json.Contains("\"status\"");
+    }
+
+    /// <summary>
     /// Compact symbol lines for the given changed files (reflect evidence enrichment), or
     /// <c>null</c> when the graph is disabled, unavailable, or matches nothing.
     /// </summary>

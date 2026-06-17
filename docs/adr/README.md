@@ -19,3 +19,4 @@ Nygard-style (Context / Decision / Consequences).
 | [12](0012-windows-phase-llamacpp-vulkan.md) | Windows-phase local inference is llama.cpp Vulkan on native Windows; vLLM defers to the Linux migration |
 | [13](0013-graph-context.md) | Code knowledge graph (codebase-memory-mcp CLI) as planner/critic context |
 | [14](0014-reflect-dual-judge-recap.md) | Reflect: a scheduled dual-judge recap on the local cards, reactions as labels |
+| [15](0015-reflect-reindex-and-journal.md) | Reflect re-indexes before it reads (the graph goes stale), and journals each recap to git |
