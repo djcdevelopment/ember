@@ -37,8 +37,11 @@ models — see the [local-loop retrospective](docs/retrospective-local-loop.md) 
 and ember carries the first two ember-side layers of the constellation-awareness
 plan (`D:\work\gad\pm\constellation-awareness-plan.md`): round-1 context from the
 code knowledge graph ([ADR 13](docs/adr/0013-graph-context.md)) and the Reflect
-dual-judge recap subsystem, disabled by default
-([ADR 14](docs/adr/0014-reflect-dual-judge-recap.md)).
+dual-judge recap subsystem — **enabled and validated end-to-end 2026-06-17**
+([ADR 14](docs/adr/0014-reflect-dual-judge-recap.md)), with recaps grounded by the
+XML-cite adoption ([ADR 16](docs/adr/0016-xml-cite-recaps-and-comparer.md)), re-index +
+git journaling ([ADR 15](docs/adr/0015-reflect-reindex-and-journal.md)), and a versioned
+experiment-corpus practice (`contracts/`, `experiments/`, drift-enforced by tests).
 
 ## Documentation
 
@@ -158,9 +161,15 @@ A scheduled (default 03:00 local) dual-judge recap of the constellation's
 committed work since the last recap: git supplies each repo's delta, the code
 knowledge graph enriches it with the symbols behind the changed files, two
 local models on the vllama facade write independent recaps, and a structured
-comparison surfaces their divergences. The recap posts as a `reflect:` thread;
-reacting ✅ / ✏️ / ❌ on it persists your verdict — the label corpus the later
-adaptation loop trains against. See [ADR 14](docs/adr/0014-reflect-dual-judge-recap.md).
+comparison surfaces their divergences. Each recap claim must cite the evidence that
+supports it, and the post carries a grounding score (claims cited / total) — the citation
+discipline that ended the cross-repo hallucination (ADR 16). A run re-indexes each changed
+repo before reading it and journals the recap to git (ADR 15). The recap posts as a
+`reflect:` thread; reacting ✅ / ✏️ / ❌ on it persists your verdict — the label corpus the
+later adaptation loop trains against. See ADRs
+[14](docs/adr/0014-reflect-dual-judge-recap.md),
+[15](docs/adr/0015-reflect-reindex-and-journal.md),
+[16](docs/adr/0016-xml-cite-recaps-and-comparer.md).
 
 **Disabled by default.** To enable: set `Ember:Reflect:Enabled` to `true` and
 `Ember:Reflect:ChannelId` to the target channel. The pipeline never launches a
@@ -205,4 +214,6 @@ docs/
   retrospective-local-loop.md   local-loop rehearsal retrospective
   adr/                          architecture decision records
 RnD/                            research notebook — inference, loop, builder, …
+contracts/                      versioned prompt/schema contracts (drift-enforced by tests)
+experiments/                    the reflect lab notebook — EXP-#### + a reconstructor's guide
 ```
