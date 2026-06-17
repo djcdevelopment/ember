@@ -11,6 +11,7 @@ using Ember.Loop;
 using Ember.Manifest;
 using Ember.Models;
 using Ember.Observability;
+using Ember.Overnight;
 using Ember.Reflect;
 using Ember.Sessions;
 using Microsoft.Extensions.AI;
@@ -40,6 +41,13 @@ if (PlanCli.IsRequested(args))
 if (ReflectCli.IsRequested(args))
 {
     return await ReflectCli.RunAsync(args);
+}
+
+// `dotnet run -- brief [--dry-run]` runs the overnight planner on the console and exits — no
+// Discord, no persistence, no auto-apply. See Cli/BriefCli.cs.
+if (BriefCli.IsRequested(args))
+{
+    return await BriefCli.RunAsync(args);
 }
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -75,6 +83,7 @@ builder.Services.AddSingleton<ISlashCommand, PlanCommand>();
 builder.Services.AddSingleton<ISlashCommand, StatusCommand>();
 builder.Services.AddSingleton<ISlashCommand, AbortCommand>();
 builder.Services.AddSingleton<ISlashCommand, ReflectCommand>();
+builder.Services.AddSingleton<ISlashCommand, BriefCommand>();
 
 // ── Planning loop + gate ──────────────────────────────────────────────────────
 builder.Services.AddSingleton<Planner>();
@@ -86,10 +95,19 @@ builder.Services.AddSingleton<PlanningLoopRunner>();
 // ── Reflect (dual-judge recap) ────────────────────────────────────────────────
 builder.Services.AddSingleton<RecapStore>();
 builder.Services.AddSingleton<JournalWriter>();
+builder.Services.AddSingleton<GlanceReader>();
 builder.Services.AddSingleton<EvidenceAssembler>();
 builder.Services.AddSingleton<DivergenceComparer>();
 builder.Services.AddSingleton<ReflectRunner>();
 builder.Services.AddSingleton<ReflectExecutor>();
+
+// ── Overnight (backlog planner / morning brief) ───────────────────────────────
+builder.Services.AddSingleton<BoardSyncReader>();
+builder.Services.AddSingleton<BriefAssembler>();
+builder.Services.AddSingleton<SummaryDocWriter>();
+builder.Services.AddSingleton<BriefStore>();
+builder.Services.AddSingleton<OvernightRunner>();
+builder.Services.AddSingleton<OvernightExecutor>();
 
 // ── Builder ───────────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<PullRequest>();
@@ -103,6 +121,8 @@ builder.Services.AddHostedService<DiscordBotService>();
 builder.Services.AddHostedService<GateService>();
 builder.Services.AddHostedService<ReflectService>();
 builder.Services.AddHostedService<ReflectTriggerService>();
+builder.Services.AddHostedService<OvernightService>();
+builder.Services.AddHostedService<OvernightTriggerService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BuildQueue>());
 
 // ── OpenTelemetry ─────────────────────────────────────────────────────────────
@@ -129,6 +149,7 @@ var host = builder.Build();
 // Create the SQLite schema before the bot accepts commands.
 host.Services.GetRequiredService<SessionStore>().Initialize();
 host.Services.GetRequiredService<RecapStore>().Initialize();
+host.Services.GetRequiredService<BriefStore>().Initialize();
 
 host.Run();
 return 0;

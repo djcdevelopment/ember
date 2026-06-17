@@ -1,3 +1,4 @@
+using System.ClientModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -27,6 +28,17 @@ public sealed class ReflectOutcome
 
     public required string JudgeBModel { get; init; }
 
+    /// <summary>Model that actually produced each recap — differs from the configured model on failover.</summary>
+    public string? JudgeAModelUsed { get; set; }
+
+    public string? JudgeBModelUsed { get; set; }
+
+    /// <summary>
+    /// Loud degradation notice rendered at the top of the post when a judge was lost or
+    /// failed over (RF2). Null when both judges answered on their own endpoint. Never silent.
+    /// </summary>
+    public string? Degrade { get; set; }
+
     /// <summary>Grounding score "valid/total" for each recap's evidence citations (null if no recap).</summary>
     public string? CitesA { get; set; }
 
@@ -52,6 +64,7 @@ public sealed class ReflectRunner
     private readonly RecapJudge _judgeB;
     private readonly DivergenceComparer _comparer;
     private readonly ModelsOptions _models;
+    private readonly ReflectOptions _reflect;
     private readonly ILogger<ReflectRunner> _logger;
 
     public ReflectRunner(
@@ -60,6 +73,7 @@ public sealed class ReflectRunner
         [FromKeyedServices("reflectB")] IChatClient judgeB,
         DivergenceComparer comparer,
         IOptions<ModelsOptions> models,
+        IOptions<EmberOptions> ember,
         ILogger<ReflectRunner> logger)
     {
         _evidence = evidence;
@@ -67,6 +81,7 @@ public sealed class ReflectRunner
         _judgeB = new RecapJudge(judgeB, "B");
         _comparer = comparer;
         _models = models.Value;
+        _reflect = ember.Value.Reflect;
         _logger = logger;
     }
 
@@ -108,8 +123,21 @@ public sealed class ReflectRunner
             return outcome;
         }
 
-        var (rawA, errorA) = await JudgeAsync(_judgeA, outcome.JudgeAModel, evidence.Text, ct);
-        var (rawB, errorB) = await JudgeAsync(_judgeB, outcome.JudgeBModel, evidence.Text, ct);
+        // Each judge: retry its own endpoint on transient 503/timeout, then fail over to the
+        // sibling's endpoint (the other card), so one down judge cannot silently gut the recap
+        // (RF2 / ADR 18). The failover is loud — a cross-sourced recap is not independent.
+        var runA = await RunResilientAsync(
+            _judgeA, outcome.JudgeAModel, _judgeB, outcome.JudgeBModel, evidence.Text, ct);
+        var runB = await RunResilientAsync(
+            _judgeB, outcome.JudgeBModel, _judgeA, outcome.JudgeAModel, evidence.Text, ct);
+
+        var rawA = runA.Recap;
+        var rawB = runB.Recap;
+        var errorA = runA.Error;
+        var errorB = runB.Error;
+        outcome.JudgeAModelUsed = runA.ModelUsed;
+        outcome.JudgeBModelUsed = runB.ModelUsed;
+        outcome.Degrade = BuildDegrade(runA, runB);
 
         // Recaps arrive as XML with per-claim <from> citations (ADR 16 / EXP-0001). Render to
         // readable markdown for the post and the comparison, and score grounding by checking
@@ -145,36 +173,148 @@ public sealed class ReflectRunner
             }
         }
 
-        outcome.PostText = Compose(outcome, errorA ?? errorB);
+        outcome.PostText = Compose(outcome);
         return outcome;
     }
 
-    private async Task<(string? Recap, string? Error)> JudgeAsync(
-        RecapJudge judge, string model, string evidence, CancellationToken ct)
+    /// <summary>One slot's outcome: the recap (or null), the model that produced it, and how.</summary>
+    private sealed record JudgeRun(
+        string Label, string? Recap, string? Error, string ModelUsed, bool FailedOver);
+
+    /// <summary>
+    /// Runs one judge slot resiliently: its own endpoint with transient-error retry/backoff,
+    /// then a single failover attempt against the sibling endpoint. A slot returns its recap
+    /// however it was produced, or a null recap with the combined error if every path failed —
+    /// the survivor still runs on full evidence.
+    /// </summary>
+    private async Task<JudgeRun> RunResilientAsync(
+        RecapJudge primary, string primaryModel,
+        RecapJudge failover, string failoverModel,
+        string evidence, CancellationToken ct)
     {
-        using var activity = Telemetry.Activity.StartActivity("reflect.judge");
-        activity?.SetTag("ember.reflect.judge", judge.Label);
-        activity?.SetTag("ember.reflect.model", model);
-        try
+        var attempts = Math.Max(1, _reflect.JudgeMaxAttempts);
+        string? lastError = null;
+
+        for (var attempt = 1; attempt <= attempts; attempt++)
         {
-            var recap = await judge.WriteAsync(evidence, ct);
-            if (string.IsNullOrWhiteSpace(recap))
-                throw new InvalidOperationException("judge returned empty output");
-            return (recap, null);
+            ct.ThrowIfCancellationRequested();
+            using var activity = Telemetry.Activity.StartActivity("reflect.judge");
+            activity?.SetTag("ember.reflect.judge", primary.Label);
+            activity?.SetTag("ember.reflect.model", primaryModel);
+            activity?.SetTag("ember.reflect.attempt", attempt);
+            try
+            {
+                var recap = await primary.WriteAsync(evidence, ct);
+                if (string.IsNullOrWhiteSpace(recap))
+                    throw new InvalidOperationException("judge returned empty output");
+                return new JudgeRun(primary.Label, recap, null, primaryModel, FailedOver: false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex.Message;
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                var transient = IsTransient(ex);
+                if (attempt < attempts && transient)
+                {
+                    var delay = TimeSpan.FromSeconds(_reflect.JudgeRetryBaseSeconds * Math.Pow(2, attempt - 1));
+                    _logger.LogWarning(
+                        "Reflect judge {Judge} ({Model}) attempt {Attempt}/{Max} failed ({Error}); retrying in {Delay}s.",
+                        primary.Label, primaryModel, attempt, attempts, ex.Message, delay.TotalSeconds);
+                    await Task.Delay(delay, ct);
+                    continue;
+                }
+                _logger.LogWarning(ex,
+                    "Reflect judge {Judge} ({Model}) exhausted {Attempts} attempt(s).",
+                    primary.Label, primaryModel, attempt);
+                break;
+            }
         }
-        catch (OperationCanceledException)
+
+        if (_reflect.JudgeFailover)
         {
-            throw;
+            _logger.LogWarning(
+                "Reflect judge {Judge}: failing over from {Primary} to {Failover}.",
+                primary.Label, primaryModel, failoverModel);
+            using var activity = Telemetry.Activity.StartActivity("reflect.judge.failover");
+            activity?.SetTag("ember.reflect.judge", primary.Label);
+            activity?.SetTag("ember.reflect.model", failoverModel);
+            try
+            {
+                var recap = await failover.WriteAsync(evidence, ct);
+                if (!string.IsNullOrWhiteSpace(recap))
+                    return new JudgeRun(primary.Label, recap, null, failoverModel, FailedOver: true);
+                lastError = $"{lastError}; failover ({failoverModel}) returned empty output";
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                _logger.LogWarning(ex,
+                    "Reflect judge {Judge}: failover to {Failover} also failed.", primary.Label, failoverModel);
+                lastError = $"{lastError}; failover ({failoverModel}): {ex.Message}";
+            }
         }
-        catch (Exception ex)
-        {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            _logger.LogWarning(ex, "Reflect judge {Judge} ({Model}) failed.", judge.Label, model);
-            return (null, ex.Message);
-        }
+
+        return new JudgeRun(primary.Label, null, lastError, primaryModel, FailedOver: false);
     }
 
-    private static string Compose(ReflectOutcome outcome, string? judgeError)
+    /// <summary>
+    /// Transient = worth a retry: a 5xx/429/408 from the facade (a slot still loading answers
+    /// 503, ADR-0007), a timeout, or a transport hiccup. A 4xx contract error is not retried.
+    /// </summary>
+    private static bool IsTransient(Exception ex) => ex switch
+    {
+        ClientResultException cre => cre.Status is 0 or 408 or 429 or >= 500,
+        TimeoutException => true,
+        TaskCanceledException => true,
+        HttpRequestException => true,
+        _ => false,
+    };
+
+    /// <summary>Header label: the model, annotated when the recap came from a failover endpoint.</summary>
+    private static string RecapLabel(string configured, string? used) =>
+        used is not null && !used.Equals(configured, StringComparison.OrdinalIgnoreCase)
+            ? $"{used} — failover from {configured}"
+            : configured;
+
+    /// <summary>The loud degrade banner — single judge, or a cross-sourced (failed-over) recap.</summary>
+    private static string? BuildDegrade(JudgeRun a, JudgeRun b)
+    {
+        var down = new List<JudgeRun>();
+        if (a.Recap is null) down.Add(a);
+        if (b.Recap is null) down.Add(b);
+
+        if (down.Count == 2)
+            return null; // both down → the run fails elsewhere; no partial banner needed.
+
+        if (down.Count == 1)
+        {
+            var d = down[0];
+            return $"> ⚠️ **Degraded — single judge.** Judge {d.Label} failed after retry + failover "
+                + $"({d.Error}). This recap is one perspective; cross-judge divergence is unavailable.";
+        }
+
+        var over = new List<JudgeRun>();
+        if (a.FailedOver) over.Add(a);
+        if (b.FailedOver) over.Add(b);
+        if (over.Count > 0)
+        {
+            var which = string.Join(" and ", over.Select(o => $"Judge {o.Label} (now on {o.ModelUsed})"));
+            return $"> ⚠️ **Degraded — failover.** {which} ran on a sibling endpoint after its own "
+                + "endpoint failed. The two recaps are not fully independent; weigh divergences with that in mind.";
+        }
+
+        return null;
+    }
+
+    private static string Compose(ReflectOutcome outcome)
     {
         var changed = outcome.Evidence.Repos.Where(r => r.HasChanges).Select(r => r.Repo).ToList();
 
@@ -184,20 +324,25 @@ public sealed class ReflectRunner
             sb.AppendLine($"_Grounding (claims cited to evidence) — A: {outcome.CitesA ?? "-"}, B: {outcome.CitesB ?? "-"}._");
         sb.AppendLine();
 
+        // Degradation is stated loudly, up top — never a silent one-bullet recap (RF2).
+        if (outcome.Degrade is not null)
+        {
+            sb.AppendLine(outcome.Degrade);
+            sb.AppendLine();
+        }
+
         if (outcome.RecapA is not null)
         {
-            sb.AppendLine($"**Recap A** ({outcome.JudgeAModel})");
+            sb.AppendLine($"**Recap A** ({RecapLabel(outcome.JudgeAModel, outcome.JudgeAModelUsed)})");
             sb.AppendLine(outcome.RecapA.Trim());
             sb.AppendLine();
         }
         if (outcome.RecapB is not null)
         {
-            sb.AppendLine($"**Recap B** ({outcome.JudgeBModel})");
+            sb.AppendLine($"**Recap B** ({RecapLabel(outcome.JudgeBModel, outcome.JudgeBModelUsed)})");
             sb.AppendLine(outcome.RecapB.Trim());
             sb.AppendLine();
         }
-        if (judgeError is not null)
-            sb.AppendLine($"_One judge failed ({judgeError}) — single-perspective recap._\n");
 
         if (outcome.Comparison is { } cmp)
         {

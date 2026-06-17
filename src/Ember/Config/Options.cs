@@ -56,6 +56,9 @@ public sealed class EmberOptions
     /// <summary>Reflect (dual-judge recap) settings (ADR 14).</summary>
     public ReflectOptions Reflect { get; set; } = new();
 
+    /// <summary>Overnight backlog-planner settings — the morning brief + PM reconciliation (ADR 19).</summary>
+    public OvernightOptions Overnight { get; set; } = new();
+
     /// <summary>
     /// Allowlisted repos: key -> <see cref="RepoEntry"/>. Each entry has an absolute host path
     /// and, optionally, the path to a constellation manifest the planner should read as round-1
@@ -213,6 +216,137 @@ public sealed class ReflectOptions
     /// starts is identical to <c>/reflect</c> and is still gated by <see cref="Enabled"/>.
     /// </summary>
     public int LocalTriggerPort { get; set; }
+
+    /// <summary>Constellation-glance evidence settings (ADR 18). The glance is the primary read.</summary>
+    public GlanceOptions Glance { get; set; } = new();
+
+    /// <summary>
+    /// Attempts per judge against its primary endpoint before failover, on transient errors
+    /// (503/timeout/5xx). 1 disables retry. The vllama facade may answer 503 while a slot is
+    /// still loading (ADR-0007); a short retry rides that out (ADR 18 / RF2).
+    /// </summary>
+    public int JudgeMaxAttempts { get; set; } = 3;
+
+    /// <summary>Base backoff between judge attempts, seconds; doubles each retry.</summary>
+    public int JudgeRetryBaseSeconds { get; set; } = 3;
+
+    /// <summary>
+    /// When a judge's primary endpoint is down after retries, try the sibling judge's endpoint
+    /// once (the other card) so the slot still produces a recap. The cross-sourced recap is
+    /// labelled loudly — it is not an independent second perspective (ADR 18 / RF2).
+    /// </summary>
+    public bool JudgeFailover { get; set; } = true;
+}
+
+/// <summary>
+/// How Reflect invokes the constellation-glance script (<c>constellation-glance.py --json</c>)
+/// to read the cross-repo working-tree state — uncommitted WIP, branch/unpushed, lifecycle,
+/// and drift. This is Reflect's <em>primary</em> evidence (ADR 18): in-flight work the
+/// commit-delta is structurally blind to. Failures are soft, like the manifest/graph seams —
+/// Reflect falls back to the commit-led read and notes the glance was unavailable.
+/// </summary>
+public sealed class GlanceOptions
+{
+    /// <summary>Master switch. Off skips the subprocess and Reflect reads commits only.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Interpreter/executable. Default <c>python</c> for the <c>.py</c> script.</summary>
+    public string Command { get; set; } = "python";
+
+    /// <summary>
+    /// Absolute path to <c>constellation-glance.py</c>. Empty disables the glance (the script
+    /// lives outside ember, in <c>gad/pm/scripts</c>), so an operator without it degrades
+    /// cleanly to the commit-led read.
+    /// </summary>
+    public string ScriptPath { get; set; } = "";
+
+    /// <summary>Args inserted before <c>--json</c> (e.g. a custom <c>--since</c> window).</summary>
+    public List<string> ExtraArgs { get; set; } = new();
+
+    /// <summary>Kill the glance subprocess if it runs longer than this. Defaults to 60s.</summary>
+    public int TimeoutSeconds { get; set; } = 60;
+}
+
+/// <summary>
+/// The overnight backlog planner (ADR 19): an operator-triggered run that reads the objective
+/// state (the glance + the latest Reflect recap), authors a <em>morning brief</em> — what
+/// changed, what's drifting, what needs a decision, the recommended next slice — and proposes
+/// PM reconciliation tiered like <c>pm/board-sync.md</c> (auto-safe / decision / editorial).
+/// Disabled by default; manual-trigger + free-VRAM, exactly like Reflect (ADR 17). It reuses
+/// the local vllama judges (the <c>reflectA</c>/<c>reflectB</c> clients) — author + critic.
+/// </summary>
+public sealed class OvernightOptions
+{
+    /// <summary>Master switch. Off: the hosted service idles and <c>/brief</c> refuses.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>Channel the morning-brief threads are created in (may equal Reflect's).</summary>
+    public string ChannelId { get; set; } = "";
+
+    /// <summary>Whether the nightly auto-run fires. False (default) = manual-only (ADR 17 posture).</summary>
+    public bool ScheduleEnabled { get; set; }
+
+    /// <summary>Local time of day the scheduled run fires (24h <c>HH:mm</c>), when <see cref="ScheduleEnabled"/>.</summary>
+    public string RunAtLocalTime { get; set; } = "06:00";
+
+    /// <summary>
+    /// Absolute directory for the dated brief markdown artifact (e.g.
+    /// <c>D:\\work\\gad\\pm\\journal\\brief</c>). Empty disables journaling. The git trail is the
+    /// open-process record the morning brief is meant to leave (ADR 15 posture).
+    /// </summary>
+    public string JournalDir { get; set; } = "";
+
+    /// <summary>Commit the brief artifact in its repo after writing it (additive, by-name). Off by default.</summary>
+    public bool CommitArtifacts { get; set; }
+
+    /// <summary>Loopback "run now" trigger port for the <c>Start-Plan</c> launcher. 0 disables (default).</summary>
+    public int LocalTriggerPort { get; set; }
+
+    /// <summary>Attempts per judge (author/critic) on transient errors before degrading. 1 disables retry.</summary>
+    public int JudgeMaxAttempts { get; set; } = 3;
+
+    /// <summary>Base backoff between judge attempts, seconds; doubles each retry.</summary>
+    public int JudgeRetryBaseSeconds { get; set; } = 3;
+
+    /// <summary>Cap on the objective-state evidence handed to the author.</summary>
+    public int MaxEvidenceChars { get; set; } = 16000;
+
+    /// <summary>
+    /// Auto-apply the in-repo <em>auto-safe</em> reconciliations (E3) — today: drafting missing
+    /// <c>pm/repos/&lt;name&gt;.md</c> summary stubs (additive, reversible, no external creds).
+    /// <strong>Off by default</strong>: start propose-only, earn auto-apply on a track record
+    /// (ADR 19). Credentialed auto-safe ops (ADO area paths) and every decision/editorial item are
+    /// always surfaced as proposals, never auto-run — the editorial/Discord tier is never touched.
+    /// </summary>
+    public bool AutoApplyAutoSafe { get; set; }
+
+    /// <summary>How the planner reads the board-sync delta (the PM reconciliation playbook).</summary>
+    public BoardSyncOptions BoardSync { get; set; } = new();
+}
+
+/// <summary>
+/// How the overnight planner invokes the GAD board-sync checker
+/// (<c>board-sync-check.py --json</c>) to read the manifest→board delta, tiered auto-safe /
+/// decision / live-truth (<c>pm/board-sync.md</c>). Soft, like the glance/graph seams: a missing
+/// script, interpreter, or ADO auth degrades to "no board proposals", stated in the brief — the
+/// glance-fed sections still stand.
+/// </summary>
+public sealed class BoardSyncOptions
+{
+    /// <summary>Master switch. Off skips the subprocess and the brief carries no board proposals.</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>Interpreter/executable. Default <c>python</c> for the <c>.py</c> checker.</summary>
+    public string Command { get; set; } = "python";
+
+    /// <summary>Absolute path to <c>board-sync-check.py</c>. Empty disables board proposals.</summary>
+    public string ScriptPath { get; set; } = "";
+
+    /// <summary>Args inserted before <c>--json</c>.</summary>
+    public List<string> ExtraArgs { get; set; } = new();
+
+    /// <summary>Kill the checker if it runs longer than this. Defaults to 150s (it queries ADO + gh).</summary>
+    public int TimeoutSeconds { get; set; } = 150;
 }
 
 /// <summary>Settings for the headless Claude Code builder.</summary>

@@ -22,3 +22,5 @@ Nygard-style (Context / Decision / Consequences).
 | [15](0015-reflect-reindex-and-journal.md) | Reflect re-indexes before it reads (the graph goes stale), and journals each recap to git |
 | [16](0016-xml-cite-recaps-and-comparer.md) | XML-cite recaps + contradiction-or-omission comparer, adopted from EXP-0001 (first experiment-cited ADR) |
 | [17](0017-reflect-manual-trigger-launcher.md) | Reflect is operator-triggered, not scheduled: a desktop launcher warms the substrate through its safety gates, then fires one run via a loopback trigger |
+| [18](0018-graph-first-evidence-and-judge-resilience.md) | Reflect evidence is glance-first (in-flight WIP + lifecycle + drift as primary, commits/symbols as detail); judges retry → fail over → degrade loudly, never a silent single-bullet recap (EXP-0002) |
+| [19](0019-overnight-backlog-planner.md) | ember overnight: an operator-triggered run authors a morning brief (changed / drifting / needs-a-call / next-slice) from the glance + recap + board-sync, and applies only the gated, in-repo auto-safe reconciliation — propose-first, tiered per board-sync.md |

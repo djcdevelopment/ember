@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Ember.Config;
 using Ember.Loop;
 using Ember.Models;
+using Ember.Overnight;
 using Ember.Reflect;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,30 +11,21 @@ using Microsoft.Extensions.Options;
 namespace Ember.Cli;
 
 /// <summary>
-/// <c>dotnet run -- reflect [--dry-run] [--since-hours N]</c> — runs the reflect pipeline
-/// from the console with no Discord and no persistence. The baseline is "N hours ago"
-/// (default 24) resolved per repo from git, so the database is never touched: a read-only
-/// way to validate evidence assembly, and — when the local endpoints are up — the judges.
+/// <c>dotnet run -- brief [--dry-run]</c> — runs the overnight planner from the console with no
+/// Discord, no persistence, and no auto-apply. <c>--dry-run</c> stops after assembling the
+/// objective state (the glance + last recap + board-sync delta) — a read-only way to validate
+/// what the brief is grounded in, and — when the local endpoints are up — the authored brief.
+/// Mirrors <see cref="ReflectCli"/>.
 /// </summary>
-public static class ReflectCli
+public static class BriefCli
 {
-    /// <summary>True when the process args ask for the console reflect run instead of the bot.</summary>
+    /// <summary>True when the process args ask for the console brief run instead of the bot.</summary>
     public static bool IsRequested(string[] args) =>
-        args.Length > 0 && args[0].Equals("reflect", StringComparison.OrdinalIgnoreCase);
+        args.Length > 0 && args[0].Equals("brief", StringComparison.OrdinalIgnoreCase);
 
     public static async Task<int> RunAsync(string[] args)
     {
         var dryRun = args.Any(a => a.Equals("--dry-run", StringComparison.OrdinalIgnoreCase));
-        var sinceHours = 24;
-        var sinceIndex = Array.FindIndex(args, a => a.Equals("--since-hours", StringComparison.OrdinalIgnoreCase));
-        if (sinceIndex >= 0)
-        {
-            if (sinceIndex + 1 >= args.Length || !int.TryParse(args[sinceIndex + 1], out sinceHours) || sinceHours <= 0)
-            {
-                Console.Error.WriteLine("usage: dotnet run -- reflect [--dry-run] [--since-hours N]");
-                return 1;
-            }
-        }
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>
@@ -42,8 +34,8 @@ public static class ReflectCli
             cts.Cancel();
         };
 
-        // A minimal host: configuration and just the reflect core — no Discord, no SQLite,
-        // no hosted services. Mirrors PlanCli.
+        // A minimal host: configuration and just the overnight core — no Discord, no SQLite,
+        // no hosted services. Mirrors ReflectCli.
         var builder = Host.CreateApplicationBuilder();
         builder.Services.Configure<EmberOptions>(builder.Configuration.GetSection(EmberOptions.Section));
         builder.Services.AddSingleton<IPostConfigureOptions<EmberOptions>, EmberOptionsPostConfigure>();
@@ -54,47 +46,48 @@ public static class ReflectCli
             ChatClientFactory.Create(sp.GetRequiredService<IOptions<ModelsOptions>>().Value.ReflectB));
         builder.Services.AddSingleton<GraphContext>();
         builder.Services.AddSingleton<GlanceReader>();
-        builder.Services.AddSingleton<EvidenceAssembler>();
-        builder.Services.AddSingleton<DivergenceComparer>();
-        builder.Services.AddSingleton<ReflectRunner>();
+        builder.Services.AddSingleton<BoardSyncReader>();
+        builder.Services.AddSingleton<BriefAssembler>();
+        builder.Services.AddSingleton<OvernightRunner>();
         using var host = builder.Build();
 
         var models = host.Services.GetRequiredService<IOptions<ModelsOptions>>().Value;
-        var runner = host.Services.GetRequiredService<ReflectRunner>();
+        var runner = host.Services.GetRequiredService<OvernightRunner>();
 
         Console.WriteLine();
-        Console.WriteLine($"Reflect — baseline: {sinceHours}h ago per repo  (console, read-only)");
-        Console.WriteLine($"  judge A: {models.ReflectA.Provider} / {models.ReflectA.Model}");
-        Console.WriteLine($"  judge B: {models.ReflectB.Provider} / {models.ReflectB.Model}");
+        Console.WriteLine("Overnight brief  (console, read-only)");
+        Console.WriteLine($"  author: {models.ReflectA.Provider} / {models.ReflectA.Model}");
+        Console.WriteLine($"  critic: {models.ReflectB.Provider} / {models.ReflectB.Model}");
         if (dryRun)
-            Console.WriteLine("  dry run — evidence only, no model calls");
+            Console.WriteLine("  dry run — objective state only, no model calls");
         Console.WriteLine();
 
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            var outcome = await runner.PrepareAsync(
-                new BaselineMode.SinceHours(sinceHours), runJudges: !dryRun, cts.Token);
+            var outcome = await runner.PrepareAsync(runJudges: !dryRun, cts.Token);
             stopwatch.Stop();
 
-            Console.WriteLine("──── evidence ────");
-            Console.WriteLine();
-            Console.WriteLine(outcome.Evidence.Text);
-
-            if (!dryRun && outcome.Status == RecapStatus.Ran)
+            if (dryRun)
             {
-                Console.WriteLine("──── recap (as it would post) ────");
+                Console.WriteLine("──── objective state (brief inputs) ────");
+                Console.WriteLine();
+                Console.WriteLine(outcome.Inputs.Text);
+            }
+            else
+            {
+                Console.WriteLine("──── brief (as it would post) ────");
                 Console.WriteLine();
                 Console.WriteLine(outcome.PostText);
             }
 
             Console.WriteLine();
             Console.WriteLine($"status: {outcome.Status}  ({stopwatch.Elapsed.TotalSeconds:0.0}s"
-                + $", {outcome.Evidence.TotalChars} evidence chars)");
+                + $", {outcome.Inputs.TotalChars} input chars, {outcome.Inputs.GlanceRepoCount} repos)");
             if (outcome.Error is not null)
                 Console.WriteLine($"error: {outcome.Error}");
 
-            return outcome.Status == RecapStatus.Failed ? 1 : 0;
+            return outcome.Status == BriefStatus.Failed ? 1 : 0;
         }
         catch (OperationCanceledException)
         {

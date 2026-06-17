@@ -21,6 +21,17 @@ Total hands-on time: ~20 minutes, most of it watching models warm up.
    e.g. *"get_architecture of this repo"* in Tempo. It should answer from the graph
    (15k nodes) without grepping files.
 
+4. **Check the glance** (Reflect's primary evidence since ADR 18). It must be on PATH for
+   python and the path in `Ember:Reflect:Glance:ScriptPath`:
+
+   ```powershell
+   python D:\work\gad\pm\scripts\constellation-glance.py --json | Select-Object -First 3
+   ```
+
+   **Checkpoint:** prints JSON. If it can't run, Reflect still works — it degrades to a
+   commit-led recap and says so in the evidence header — but you lose the in-flight (uncommitted)
+   WIP that is the whole point of the graph-first fix.
+
 ---
 
 ## Phase 1 — bring the judges up (vllama, through its gates)
@@ -66,16 +77,20 @@ means an alias's model isn't resident — re-run the matching `up`.
 dotnet run --project D:\work\ember\src\Ember -- reflect --since-hours 48
 ```
 
-This is the real pipeline, read-only: git resolves each repo's 48h baseline, the
-graph enriches it, both judges write, divergences get extracted — printed to the
-console, nothing persisted, no Discord.
+This is the real pipeline, read-only: the constellation glance + git resolve each
+repo's in-flight WIP and 48h committed baseline, the graph enriches it, both judges
+write, divergences get extracted — printed to the console, nothing persisted, no Discord.
 
-**Checkpoint:** output ends with `status: Ran`, and you can read Recap A, Recap B,
-and an Agreement/Divergences section. This is the moment you find out what a
-30B + 14B judge pair actually sounds like — worth reading slowly.
+**Checkpoint:** the evidence header reads `N repo(s) in flight … Primary read: constellation
+glance` and lists *uncommitted* WIP per repo, not just committed deltas (ADR 18). Output ends
+with `status: Ran`, and you can read Recap A, Recap B, and an Agreement/Divergences section.
+This is the moment you find out what a 30B + 14B judge pair actually sounds like.
 
-If the endpoints are down you'll see judge failures and `status: Failed` — that's
-the fail-soft path working; fix Phase 1 and rerun.
+If one endpoint is slow/loading, the run **retries then fails over** to the other card and the
+recap carries a loud `⚠️ Degraded` banner naming what happened (ADR 18) — not a silent
+single-bullet. If *both* endpoints are down you'll see `status: Failed` — the fail-soft path
+working; fix Phase 1 and rerun. To see the glance unavailable-path, the header says
+`Constellation glance unavailable — evidence is commit-led only`.
 
 ---
 

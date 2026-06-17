@@ -41,3 +41,4 @@ harness isn't re-authored each time. EXP-0001's `run_ab.py` is the bespoke seed.
 | EXP | Question | Verdict | Decision |
 |---|---|---|---|
 | [0001](EXP-0001-comparer-format/) | XML vs JSON for the comparer + recap grounding | Improved prompt dominant; XML-cite killed the recap hallucination | ADR-0016 |
+| [0002](EXP-0002-graph-first-evidence/) | Does glance-first evidence surface in-flight work the commit-led read missed? | Yes — same night, 2 repos → 8 in-flight; all WIP surfaced, citable, within budget (judge arm deferred) | ADR-0018 |

@@ -47,7 +47,96 @@ public sealed class EvidenceAssemblerTests : IDisposable
         Assert.Equal(head, evidence.ToSha);
         Assert.Contains("add feature file", evidence.Section);
         Assert.Contains("feature.cs", evidence.Section);
-        Assert.Contains("1 repo(s) with changes", bundle.Text);
+        Assert.Contains("1 repo(s) in flight", bundle.Text);
+    }
+
+    [SkippableFact]
+    public async Task Uncommitted_wip_makes_a_repo_in_flight_even_with_no_commit_delta()
+    {
+        Skip.IfNot(GitWorks(), "git is not available on this host.");
+        var repo = CreateRepo("alpha", out _, out var head);
+        // Dirty the working tree without committing — the in-flight work commit-delta is blind to.
+        File.WriteAllText(Path.Combine(repo, "planner.cs"), "// WIP, not committed");
+
+        // Baseline = HEAD, so there is no committed delta; only the WIP should surface.
+        var bundle = await Assemble(repo, new BaselineMode.LastRecorded(
+            new Dictionary<string, string> { ["alpha"] = head }));
+
+        var evidence = Assert.Single(bundle.Repos);
+        Assert.True(evidence.HasChanges, "a repo with uncommitted WIP must be in flight");
+        Assert.Equal(1, evidence.WipCount);
+        Assert.Contains("planner.cs", evidence.Section);
+        Assert.Contains("Uncommitted", evidence.Section);
+        Assert.Contains("1 repo(s) in flight", bundle.Text);
+    }
+
+    [SkippableFact]
+    public async Task Glance_framing_leads_the_section_and_drift_surfaces()
+    {
+        Skip.IfNot(GitWorks(), "git is not available on this host.");
+        var repo = CreateRepo("alpha", out _, out var head);
+        File.WriteAllText(Path.Combine(repo, "wip.cs"), "// dirty");
+
+        var glanceJson = """
+            { "repos": [ { "name": "alpha", "kind": "git", "lifecycle": "deprecating",
+              "wip": 1, "recent": [], "branch": "master...origin/master", "ahead": false,
+              "behind": false, "days_since_commit": 0, "hot": true, "drift_flag": false } ] }
+            """;
+        var options = OptionsWithGlance(("alpha", repo));
+        var assembler = new EvidenceAssembler(
+            new GraphContext(options, NullLogger<GraphContext>.Instance),
+            new FakeGlance(options, glanceJson),
+            options, NullLogger<EvidenceAssembler>.Instance);
+
+        var bundle = await assembler.AssembleAsync(
+            new BaselineMode.LastRecorded(new Dictionary<string, string> { ["alpha"] = head }),
+            CancellationToken.None);
+
+        var evidence = Assert.Single(bundle.Repos);
+        Assert.True(evidence.HasChanges);
+        Assert.Contains("deprecating", evidence.Section); // lifecycle framing from the glance
+        Assert.Contains("Primary read: constellation glance", bundle.Text);
+    }
+
+    [SkippableFact]
+    public async Task Glance_unavailable_degrades_to_commit_led_with_a_loud_note()
+    {
+        Skip.IfNot(GitWorks(), "git is not available on this host.");
+        var repo = CreateRepo("alpha", out var first, out _);
+
+        var options = OptionsWithGlance(("alpha", repo));
+        var assembler = new EvidenceAssembler(
+            new GraphContext(options, NullLogger<GraphContext>.Instance),
+            new FakeGlance(options, json: null), // subprocess "failed"
+            options, NullLogger<EvidenceAssembler>.Instance);
+
+        var bundle = await assembler.AssembleAsync(
+            new BaselineMode.LastRecorded(new Dictionary<string, string> { ["alpha"] = first }),
+            CancellationToken.None);
+
+        Assert.Contains("Constellation glance unavailable", bundle.Text);
+        Assert.True(bundle.Repos.Single().HasChanges); // commit-led path still works
+    }
+
+    /// <summary>Options with the glance turned on (ScriptPath set) so the reader is exercised.</summary>
+    private static IOptions<EmberOptions> OptionsWithGlance(params (string Key, string Path)[] repos)
+    {
+        var options = new EmberOptions { Graph = new GraphOptions { Enabled = false } };
+        options.Reflect.Glance.Enabled = true;
+        options.Reflect.Glance.ScriptPath = "fake-glance.py";
+        foreach (var (key, path) in repos)
+            options.Repos[key] = new RepoEntry { Path = path };
+        return Options.Create(options);
+    }
+
+    /// <summary>A GlanceReader whose subprocess seam returns canned JSON (or null to simulate failure).</summary>
+    private sealed class FakeGlance : GlanceReader
+    {
+        private readonly string? _json;
+        public FakeGlance(IOptions<EmberOptions> options, string? json)
+            : base(options, NullLogger<GlanceReader>.Instance) => _json = json;
+
+        protected override Task<string?> RunGlanceAsync(CancellationToken ct) => Task.FromResult(_json);
     }
 
     [SkippableFact]
@@ -117,7 +206,9 @@ public sealed class EvidenceAssemblerTests : IDisposable
         options.Repos["alpha"] = new RepoEntry { Path = repo };
         var opt = Options.Create(options);
         var graph = new RecordingGraph(opt);
-        var assembler = new EvidenceAssembler(graph, opt, NullLogger<EvidenceAssembler>.Instance);
+        var assembler = new EvidenceAssembler(
+            graph, new GlanceReader(opt, NullLogger<GlanceReader>.Instance), opt,
+            NullLogger<EvidenceAssembler>.Instance);
 
         await assembler.AssembleAsync(
             new BaselineMode.LastRecorded(new Dictionary<string, string> { ["alpha"] = first }),
@@ -132,6 +223,7 @@ public sealed class EvidenceAssemblerTests : IDisposable
 
     private static EvidenceAssembler NewAssembler(IOptions<EmberOptions> options) =>
         new(new GraphContext(options, NullLogger<GraphContext>.Instance),
+            new GlanceReader(options, NullLogger<GlanceReader>.Instance),
             options, NullLogger<EvidenceAssembler>.Instance);
 
     /// <summary>A GraphContext whose CLI seam records the tools called, in order, and returns

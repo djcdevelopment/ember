@@ -1,0 +1,300 @@
+﻿
+Reflect — baseline: 24h ago per repo  (console, read-only)
+  judge A: openai / vllama-planner
+  judge B: openai / vllama-critic
+  dry run — evidence only, no model calls
+
+──── evidence ────
+
+# Evidence — 2026-06-17
+8 repo(s) in flight, 2 quiet.
+_Primary read: constellation glance (11 repos)._
+
+### b70tools — active · 0 uncommitted · 3 commit(s) since baseline · branch research-wow-realtime-inference-impact · committed today
+(3c23995..47ee2ff)
+Commits since baseline:
+- 47ee2ff docs/scripts: generalize personal WoW/Tempo paths to placeholders
+- 7437b48 Add MIT LICENSE; publish WoW inference-impact research line
+- 9c60bff retro: overnight-regression-harness — docs, README, retro
+Committed files:
+- .gitignore
+- LICENSE
+- README.md
+- docs/agent-guides/research-gauge-stream-b-kickoff.md
+- docs/findings-wow-realtime-inference-impact-1.md
+- docs/inference-test-backlog.md
+- docs/overnight-regression-plan-2026-06-16.md
+- docs/research-gauge-stream-b-status.md
+- docs/retrospective-wow-realtime-inference-impact-2026-05-29.md
+- docs/retrospective-wow-realtime-inference-impact-overnight-2026-06-16.md
+- docs/wow-realtime-inference-impact-plan.md
+- scripts/overnight-regression/Invoke-LeopardArtifactSweep.ps1
+- scripts/overnight-regression/Run-OvernightAll.ps1
+- scripts/overnight-regression/Start-ParserRegressionSweep.ps1
+- scripts/stress-suite/Start-StressSuite.ps1
+- scripts/tooling/Start-AlwaysHotMoE.ps1
+- scripts/wow-impact/Invoke-InferenceStimulus.ps1
+- scripts/wow-impact/NoBom.ps1
+- scripts/wow-impact/README.md
+- scripts/wow-impact/Start-ResearchGaugeRun.ps1
+- scripts/wow-impact/Start-SecondB70LlamaServer.ps1
+- scripts/wow-impact/Start-WowImpactRun.ps1
+- scripts/wow-impact/Start-WowKeyRun.ps1
+- scripts/wow-impact/Summarize-WowImpactRun.ps1
+- scripts/wow-impact/Watch-DpcLatency.ps1
+- scripts/wow-impact/Watch-HostPressure.ps1
+- scripts/wow-impact/Watch-WowLogTail.ps1
+- src/collectors/igcl_power_telemetry.cc
+- src/collectors/pdh_gpu_engine.cc
+- src/tools/adapters.cc
+
+Symbols touched (from the code graph):
+- README.md — Module — README.md
+- docs/agent-guides/research-gauge-stream-b-kickoff.md — Module — docs/agent-guides/research-gauge-stream-b-kickoff.md
+- docs/findings-wow-realtime-inference-impact-1.md — Module — docs/findings-wow-realtime-inference-impact-1.md
+- docs/inference-test-backlog.md — Module — docs/inference-test-backlog.md
+- docs/overnight-regression-plan-2026-06-16.md — Module — docs/overnight-regression-plan-2026-06-16.md
+- docs/research-gauge-stream-b-status.md — Module — docs/research-gauge-stream-b-status.md
+- docs/retrospective-wow-realtime-inference-impact-2026-05-29.md — Module — docs/retrospective-wow-realtime-inference-impact-2026-05-29.md
+- eval/README.md — Module — eval/README.md
+- scripts/wow-impact/README.md — Module — scripts/wow-impact/README.md
+- third_party/Vulkan-Headers/LICENSE.md — Module — third_party/Vulkan-Headers/LICENSE.md
+- third_party/Vulkan-Headers/README.md — Module — third_party/Vulkan-Headers/README.md
+- third_party/igcl/README.md — Module — third_party/igcl/README.md
+- third_party/igcl/Samples/3D_Feature_Samples/README.md — Module — third_party/igcl/Samples/3D_Feature_Samples/README.md
+- third_party/igcl/Samples/Color_Samples/README.md — Module — third_party/igcl/Samp
+...(repo evidence truncated)
+
+### ember — active · 10 uncommitted · 9 commit(s) since baseline · branch master · committed today
+(93ef3a4..1508cb2)
+Uncommitted (working tree — in-flight, not yet committed): 10 file(s)
+- src/Ember/Cli/ReflectCli.cs
+- src/Ember/Config/Options.cs
+- src/Ember/Program.cs
+- src/Ember/Reflect/EvidenceAssembler.cs
+- src/Ember/Reflect/ReflectExecutor.cs
+- src/Ember/Reflect/ReflectRunner.cs
+- src/Ember/appsettings.json
+- tests/Ember.Tests/EvidenceAssemblerTests.cs
+- src/Ember/Reflect/GlanceReader.cs
+- tests/Ember.Tests/ReflectRunnerResilienceTests.cs
+Commits since baseline:
+- 1508cb2 Start-Reflect: pin planner --slot, gate on serve-readiness
+- 51f2f10 docs: ADR 17 + runbook/README/PLAN for manual-trigger Reflect
+- 41f4410 feat: Start-Reflect desktop launcher - warm judges, run, free VRAM
+- 225a4bb feat: Reflect manual-only schedule + loopback run-now trigger (ADR 17)
+- 3b5fddf fix: add GuildMessageReactions intent so the bot actually receives reaction events
+- b0bd67d docs: README catches up - Reflect live + grounded, experiment-corpus practice, contracts/experiments dirs
+- 0bf86bf docs: refresh the reflect enable runbook (--slot slot-b, journaling + reindex notes)
+- 5aa9df4 Experiment-corpus practice + its first instance: XML-cite recaps & comparer (ADR 16)
+- 441b705 Reflect re-indexes before it reads, and journals to git (ADR 15)
+Committed files:
+- .codebase-memory/adr.md
+- .gitignore
+- PLAN.md
+- README.md
+- contracts/README.md
+- contracts/comparer-prompt/v1-original.md
+- contracts/comparer-prompt/v2-contradiction-or-omission.md
+- contracts/comparer-schema/v1-json.md
+- contracts/comparer-schema/v2-xml.md
+- contracts/recap-prompt/v1-plain.md
+- contracts/recap-prompt/v2-xml-cite.md
+- docs/adr/0014-reflect-dual-judge-recap.md
+- docs/adr/0015-reflect-reindex-and-journal.md
+- docs/adr/0016-xml-cite-recaps-and-comparer.md
+- docs/adr/0017-reflect-manual-trigger-launcher.md
+- docs/adr/README.md
+- docs/reflect-enable-runbook.md
+- experiments/EXP-0001-comparer-format/inputs/evidence-window-dryrun.txt
+- experiments/EXP-0001-comparer-format/results/A1_json_orig_run0.txt
+- experiments/EXP-0001-comparer-format/results/A1_json_orig_run1.txt
+- experiments/EXP-0001-comparer-format/results/A1_json_orig_run2.txt
+- experiments/EXP-0001-comparer-format/results/A2_json_improved_run0.txt
+- experiments/EXP-0001-comparer-format/results/A2_json_improved_run1.txt
+- experiments/EXP-0001-comparer-format/results/A2_json_improved_run2.txt
+- experiments/EXP-0001-comparer-format/results/A3_xml_improved_run0.txt
+- experiments/EXP-0001-comparer-format/results/A3_xml_improved_run1.txt
+- experiments/EXP-0001-comparer-format/results/A3_xml_improved_run2.txt
+- experiments/EXP-0001-comparer-format/results/B1_plain_run0.txt
+- experiments/EXP-0001-comparer-format/results/B1_plain_run1.txt
+- experiments/EXP-0001-comparer-format/results/B1_plain_run2.txt
+- experiments/EXP-0001-comparer-format/results/B2_xml_cite_run0.txt
+- experiments/EXP-
+...(repo evidence truncated)
+
+### hearth — active · 3 uncommitted · 0 commit(s) since baseline · branch feat/hearth-chronicle · last commit 32d ago
+(1b68aef..1b68aef)
+Uncommitted (working tree — in-flight, not yet committed): 3 file(s)
+- bot/register-commands.ts
+- scripts/capture-responses.py
+- scripts/responses.json
+
+Symbols touched (from the code graph):
+- bot/register-commands.ts — Module — bot/register-commands.ts
+- scripts/capture-responses.py — Module — scripts/capture-responses.py
+- scripts/responses.json — Module — scripts/responses.json
+
+### lantern — active · 0 uncommitted · 0 commit(s) since baseline · branch main [unpushed] · last commit 26d ago
+(6d535fe..6d535fe)
+
+### leopard — active · 20 uncommitted · 0 commit(s) since baseline · branch master · last commit 1d ago
+(3d4999f..3d4999f)
+Uncommitted (working tree — in-flight, not yet committed): 20 file(s)
+- src/leopard-web/src/AskPanel.jsx
+- src/leopard-web/src/catalog.js
+- src/leopard-web/src/contract.js
+- docs/vision/
+- src/leopard-web/src/AskPanel.test.jsx
+- src/leopard-web/src/aggregate.js
+- src/leopard-web/src/aggregate.test.js
+- src/leopard-web/src/askController.js
+- src/leopard-web/src/askController.test.js
+- src/leopard-web/src/catalog-hardening.test.js
+- src/leopard-web/src/catalog-inventory-parity.test.js
+- src/leopard-web/src/frames.js
+- src/leopard-web/src/frames.test.js
+- src/leopard-web/src/planner.js
+- src/leopard-web/src/planner.test.js
+- src/leopard-web/src/recipes.js
+- src/leopard-web/src/recipes.test.js
+- src/leopard-web/src/seasons.js
+- src/leopard-web/src/seasons.test.js
+- src/leopard-web/src/selectionSurface.test.js
+
+Symbols touched (from the code graph):
+- Aggregates — Field — src/leopard-host/SignalsArtifact.cs
+- AskPanel — Function — src/leopard-web/src/AskPanel.jsx
+- PROPERTY_CATALOG — Variable — src/leopard-web/src/catalog.js
+- SignalAggregatesDto — Class — src/leopard-host/SignalsArtifact.cs
+- SignalRows_WiredWithAggregates_PlaceholdersWithout — Method — src/leopard-host.Tests/PullDiffTests.cs
+- buildContract — Function — src/leopard-web/src/contract.js
+- docs/adr/0007-explorer-slice-contracts-compile-client-side.md — Module — docs/adr/0007-explorer-slice-contracts-compile-client-side.md
+- docs/adr/0011-property-catalog-single-source-palettes-derive.md — Module — docs/adr/0011-property-catalog-single-source-palettes-derive.md
+- docs/catalog-selection-ux-plan.md — Module — docs/catalog-selection-ux-plan.md
+- docs/provider-contract.md — Module — docs/provider-contract.md
+- docs/vision/host-catalog-emit-plan.md — Module — docs/vision/host-catalog-emit-plan.md
+- retros/trend-lens-and-property-catalog-2026-06-16.md — Module — retros/trend-lens-and-property-catalog-2026-06-16.md
+- src/leopard-web/src/AskPanel.jsx — Module — src/leopard-web/src/AskPanel.jsx
+- src/leopard-web/src/AskPanel.test.jsx — Module — src/leopard-web/src/AskPanel.test.jsx
+- src/leopard-web/src/aggregate.js — Module — src/leopard-web/src/aggregate.js
+
+### raidui — deprecating · 27 uncommitted · 0 commit(s) since baseline · branch master · last commit 31d ago
+(c3933d3..c3933d3)
+Uncommitted (working tree — in-flight, not yet committed): 27 file(s)
+- contracts/session/event.schema.json
+- installer/raidui-setup.iss
+- installer/scripts/finalize.ps1
+- installer/scripts/parse-initial.ps1
+- installer/scripts/pull-model.ps1
+- installer/scripts/setup-raidui.ps1
+- newui/app/src/App.tsx
+- newui/app/src/api/client.ts
+- src/model/eventKinds.js
+- src/parser/__tests__/events-trim.test.cjs
+- src/parser/__tests__/utility-events.test.cjs
+- src/parser/defensive-spell-list.js
+- src/parser/eventClassifier.js
+- src/parser/replayBuilder.js
+- .mailmap-rewrite
+- dist-extension/
+- docs/guild-onboarding/
+- docs/orientation/
+- goat_env.txt
+- installer/banners/small-icon.jpg
+- installer/banners/step-0-welcome.jpg
+- installer/scripts/extract-characters.ps1
+- installer/scripts/launch-raidui.ps1
+- installer/tools/convert-banners.ps1
+- out-fresh/
+- packaging/
+- src/parser/__tests__/environmental-events.test.cjs
+
+Symbols touched (from the code graph):
+- .orchestrator/track-kappa-coverage-data.status.md — Module — .orchestrator/track-kappa-coverage-data.status.md
+- App — Function — app/app.jsx
+- App — Function — NewUI/app/src/App.tsx
+- CLIENT_VERSION — Variable — bin/byoh-upload.js
+- NEWUI_APP — Variable — bin/publish-newui.js
+- NewUI/app.jsx — Module — NewUI/app.jsx
+- NewUI/app/README.md — Module — NewUI/app/README.md
+- NewUI/app/eslint.config.js — Module — NewUI/app/eslint.config.js
+- NewUI/app/index.html — Module — NewUI/app/index.html
+- NewUI/app/src/App.tsx — Module — NewUI/app/src/App.tsx
+- NewUI/app/src/CoherenceLens.tsx — Module — NewUI/app/src/CoherenceLens.tsx
+- NewUI/app/src/CompareLens.tsx — Module — NewUI/app/src/CompareLens.tsx
+- NewUI/app/src/ComparePane.tsx — Module — NewUI/app/src/ComparePane.tsx
+- NewUI/app/src/CoverageTimeline.tsx — Module — NewUI/app/src/CoverageTimeline.tsx
+- NewUI/app/src/DebugLogOverlay.tsx — Module — NewUI/app/src/DebugLogOverlay.tsx
+
+### tempo — active · 12 uncommitted · 0 commit(s) since baseline · branch feature/tempo-projections-lib · last commit 14d ago
+(634a87a..634a87a)
+Uncommitted (working tree — in-flight, not yet committed): 12 file(s)
+- src/Tempo.Host/Tempo.Host.csproj
+- src/Tempo.Projections/CareerProjection.cs
+- src/Tempo.Projections/EncountersProjection.cs
+- src/Tempo.Projections/RaidViewContracts.cs
+- src/Tempo.Projections/ShapeContracts.cs
+- src/Tempo.Projections/ShapeProjection.cs
+- src/Tempo.Projections/TrendsContracts.cs
+- src/Tempo.Projections/TrendsProjection.cs
+- src/Tempo.sln
+- docs/knowledge-production-pipeline.md
+- docs/vision/
+- src/Tempo.Projections/Tempo.Projections.csproj
+
+Symbols touched (from the code graph):
+- CareerProjection — Class — src/Tempo.Projections/CareerProjection.cs
+- EncountersProjection — Class — src/Tempo.Projections/EncountersProjection.cs
+- ShapeProjection — Class — src/Tempo.Projections/ShapeProjection.cs
+- TrendsProjection — Class — src/Tempo.Projections/TrendsProjection.cs
+- TrendsProjectionTests — Class — src/Tempo.Host.Tests/ViewerApi/TrendsProjectionTests.cs
+- src/Tempo.Host.Tests/Benches/BenchDebugPanelTests.cs — Module — src/Tempo.Host.Tests/Benches/BenchDebugPanelTests.cs
+- src/Tempo.Host.Tests/Benches/BenchViewModelBaseTests.cs — Module — src/Tempo.Host.Tests/Benches/BenchViewModelBaseTests.cs
+- src/Tempo.Host.Tests/Benches/PercolationBenchTests.cs — Module — src/Tempo.Host.Tests/Benches/PercolationBenchTests.cs
+- src/Tempo.Host.Tests/Benches/ReactionRateBenchTests.cs — Module — src/Tempo.Host.Tests/Benches/ReactionRateBenchTests.cs
+- src/Tempo.Host.Tests/Benches/ReplayRibbonTests.cs — Module — src/Tempo.Host.Tests/Benches/ReplayRibbonTests.cs
+- src/Tempo.Host.Tests/Benches/SwimLaneCanvasTests.cs — Module — src/Tempo.Host.Tests/Benches/SwimLaneCanvasTests.cs
+- src/Tempo.Host.Tests/ChatClientFactoryTests.cs — Module — src/Tempo.Host.Tests/ChatClientFactoryTests.cs
+- src/Tempo.Host.Tests/HostSettingsTests.cs — Module — src/Tempo.Host.Tests/HostSettingsTests.cs
+- src/Tempo.Host.Tests/Integration/FakeNotificationService.cs — Module — src/Tempo.Host.Tests/Integration/FakeNotificationService.cs
+- src/Tempo.Host.Tests/Integration/LiveLogStreamingTests.cs — Module — src/Tempo.Host.Tests/Integration/LiveLogStreamingTests.cs
+
+### vllama — active · 0 uncommitted · 2 commit(s) since baseline · branch master · committed today
+(9a37827..c130d76)
+Commits since baseline:
+- c130d76 vllama: serve-readiness + alias/slot contract (ADR-0007)
+- de76d76 vllama: resident-aware host-pressure preflight (ADR-0006)
+Committed files:
+- README.md
+- config/models.json
+- docs/adr/0006-resident-aware-host-pressure.md
+- docs/adr/0007-serve-readiness-and-alias-slot-contract.md
+- src/Vllama/Config/Config.cs
+- src/Vllama/Facade/FacadeHost.cs
+- src/Vllama/Launch/ArgVectorBuilder.cs
+- src/Vllama/Lifecycle/ProcessUtil.cs
+- src/Vllama/Lifecycle/SlotManager.cs
+- src/Vllama/Program.cs
+
+Symbols touched (from the code graph):
+- ArgVectorBuilder — Class — src/Vllama/Launch/ArgVectorBuilder.cs
+- ConfigContext — Class — src/Vllama/Config/Config.cs
+- ConfigContext — Method — src/Vllama/Config/Config.cs
+- FacadeHost — Class — src/Vllama/Facade/FacadeHost.cs
+- Models — Field — src/Vllama/Config/Config.cs
+- Models — Field — src/Vllama/Config/Config.cs
+- ModelsConfig — Class — src/Vllama/Config/Config.cs
+- ModelsConfigPath — Field — src/Vllama/Config/Config.cs
+- ModelsRoot — Field — src/Vllama/Config/Config.cs
+- ProcessUtil — Class — src/Vllama/Lifecycle/ProcessUtil.cs
+- README.md — Module — README.md
+- ResolveModelsPath — Method — src/Vllama/Config/Config.cs
+- SlotsConfig — Class — src/Vllama/Config/Config.cs
+- SlotsConfigPath — Field — src/Vllama/Config/Config.cs
+- config/models.json — Module — config/models.json
+
+Quiet: campfire (no changes), discoverlay (no changes)
+
+
+status: Ran  (2.6s, 15049 evidence chars)

@@ -4,6 +4,7 @@ using Discord;
 using Discord.WebSocket;
 using Ember.Config;
 using Ember.Observability;
+using Ember.Overnight;
 using Ember.Reflect;
 using Ember.Sessions;
 using Microsoft.Extensions.Options;
@@ -23,6 +24,7 @@ public sealed class DiscordBotService : BackgroundService
     private readonly IReadOnlyDictionary<string, ISlashCommand> _commands;
     private readonly SessionStore _sessions;
     private readonly RecapStore _recaps;
+    private readonly BriefStore _briefs;
     private readonly ThreadGateway _threads;
     private readonly DiscordOptions _options;
     private readonly IHostApplicationLifetime _lifetime;
@@ -37,6 +39,7 @@ public sealed class DiscordBotService : BackgroundService
         IEnumerable<ISlashCommand> commands,
         SessionStore sessions,
         RecapStore recaps,
+        BriefStore briefs,
         ThreadGateway threads,
         IOptions<DiscordOptions> options,
         IHostApplicationLifetime lifetime,
@@ -46,6 +49,7 @@ public sealed class DiscordBotService : BackgroundService
         _commands = commands.ToDictionary(c => c.Name);
         _sessions = sessions;
         _recaps = recaps;
+        _briefs = briefs;
         _threads = threads;
         _options = options.Value;
         _lifetime = lifetime;
@@ -217,8 +221,13 @@ public sealed class DiscordBotService : BackgroundService
         if (label is null)
             return;
 
-        if (_recaps.SetLabel(message.Id.ToString(), label))
+        // The same ✅/✏️/❌ verdict applies to both reflect recaps and overnight briefs; the label
+        // message id disambiguates which store owns it.
+        var messageId = message.Id.ToString();
+        if (_recaps.SetLabel(messageId, label))
             _logger.LogInformation("Recap labelled '{Label}' via reaction on message {MessageId}.", label, message.Id);
+        else if (_briefs.SetLabel(messageId, label))
+            _logger.LogInformation("Brief labelled '{Label}' via reaction on message {MessageId}.", label, message.Id);
     }
 
     private static async Task RespondWithErrorAsync(SocketSlashCommand command)

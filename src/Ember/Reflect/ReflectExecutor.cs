@@ -103,9 +103,10 @@ public sealed class ReflectExecutor
         TryPersist(recap, outcome);
 
         Telemetry.RecapsCompleted.Add(1, new KeyValuePair<string, object?>("outcome", recap.Status.ToString()));
+        var degraded = outcome?.Degrade is not null ? " [degraded — see recap banner]" : "";
         return recap.Status switch
         {
-            RecapStatus.Ran => $"Recap posted — {recap.ReposJson} ({recap.EvidenceChars} evidence chars).",
+            RecapStatus.Ran => $"Recap posted — {recap.ReposJson} ({recap.EvidenceChars} evidence chars){degraded}.",
             RecapStatus.Skipped => "No committed changes since the last recap; baselines recorded.",
             _ => $"Reflect failed: {recap.Error}",
         };

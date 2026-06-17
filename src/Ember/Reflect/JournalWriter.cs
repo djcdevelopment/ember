@@ -30,30 +30,39 @@ public sealed class JournalWriter
     /// Writes the recap markdown for a date and, if <c>CommitArtifacts</c> is set, commits it
     /// in its repo. Returns the path written, or <c>null</c> when journaling is off or failed.
     /// </summary>
-    public async Task<string?> WriteAsync(string date, string markdown, CancellationToken ct)
+    public Task<string?> WriteAsync(string date, string markdown, CancellationToken ct) =>
+        WriteAsync(_options.JournalDir, _options.CommitArtifacts, date, markdown, ct);
+
+    /// <summary>
+    /// Writes a dated markdown artifact under <paramref name="dir"/> and optionally commits it —
+    /// the config-agnostic form so both Reflect and the overnight brief can journal (ADR 15/19).
+    /// <paramref name="kind"/> labels the commit subject (e.g. "recap", "brief").
+    /// </summary>
+    public async Task<string?> WriteAsync(
+        string dir, bool commit, string date, string markdown, CancellationToken ct, string kind = "reflect: recap")
     {
-        if (string.IsNullOrWhiteSpace(_options.JournalDir))
+        if (string.IsNullOrWhiteSpace(dir))
             return null;
 
         string path;
         try
         {
-            Directory.CreateDirectory(_options.JournalDir);
-            path = Path.Combine(_options.JournalDir, $"{date}.md");
+            Directory.CreateDirectory(dir);
+            path = Path.Combine(dir, $"{date}.md");
             await File.WriteAllTextAsync(path, markdown, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Reflect: could not write journal artifact under {Dir}.", _options.JournalDir);
+            _logger.LogWarning(ex, "Journal: could not write artifact under {Dir}.", dir);
             return null;
         }
 
-        if (_options.CommitArtifacts)
-            await TryCommitAsync(path, date, ct);
+        if (commit)
+            await TryCommitAsync(path, date, ct, kind);
         return path;
     }
 
-    private async Task TryCommitAsync(string filePath, string date, CancellationToken ct)
+    private async Task TryCommitAsync(string filePath, string date, CancellationToken ct, string kind = "reflect: recap")
     {
         try
         {
@@ -67,7 +76,7 @@ public sealed class JournalWriter
 
             // Stage only this file, by name — never `git add .`.
             await GitAsync(root, ["add", "--", filePath], ct);
-            var committed = await GitAsync(root, ["commit", "-m", $"reflect: recap {date} (automated)"], ct);
+            var committed = await GitAsync(root, ["commit", "-m", $"{kind} {date} (automated)"], ct);
             if (committed is null)
                 _logger.LogInformation("Reflect: nothing to commit for {Date} (recap unchanged).", date);
             else
