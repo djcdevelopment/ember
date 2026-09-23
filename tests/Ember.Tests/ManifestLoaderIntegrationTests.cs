@@ -16,7 +16,8 @@ namespace Ember.Tests;
 /// </summary>
 public class ManifestLoaderIntegrationTests
 {
-    private const string GadConstellation = @"D:\work\gad\constellation.yaml";
+    private static readonly string GadConstellation =
+        File.Exists(@"D:\work\gad\constellation.yaml") ? @"D:\work\gad\constellation.yaml" : @"E:\work\gad\constellation.yaml";
 
     [SkippableFact]
     public async Task Real_subprocess_against_live_GAD_yaml_yields_summary_with_expected_tokens()
